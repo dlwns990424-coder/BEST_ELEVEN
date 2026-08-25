@@ -38,3 +38,17 @@ textarea {
 button {
   cursor: pointer;
 }
+/* 로그인 / 회원가입 자동완성 스타일 */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus,
+.auth-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+
+  -webkit-box-shadow: 0 0 0 1000px #585353 inset !important;
+  box-shadow: 0 0 0 1000px #585353 inset !important;
+
+  caret-color: #ffffff;
+
+  transition: background-color 9999s ease-out 0s;
+}

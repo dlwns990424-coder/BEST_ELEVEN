@@ -1,6 +1,8 @@
 import { Check } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 
+import PlayerImage from "../../../../components/common/PlayerImage";
+
 export default function CandidateCard({
   player,
   isEditMode,
@@ -63,10 +65,8 @@ export default function CandidateCard({
       )}
 
       <div className="flex h-[82px] items-end justify-center overflow-hidden">
-        <img
-          src={player.image}
-          alt={player.name}
-          draggable={false}
+        <PlayerImage
+          player={player}
           className="pointer-events-none h-full w-full object-contain"
         />
       </div>

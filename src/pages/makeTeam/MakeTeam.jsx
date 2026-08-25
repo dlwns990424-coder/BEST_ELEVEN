@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Save } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   closestCenter,
   DndContext,
@@ -12,6 +13,7 @@ import {
 
 import Header from "../../components/common/Header";
 import Toast from "../../components/common/Toast";
+import PlayerImage from "../../components/common/PlayerImage";
 
 import TeamName from "./components/team/TeamName";
 import FormationSelect from "./components/formation/FormationSelect";
@@ -19,27 +21,45 @@ import FormationField from "./components/formation/FormationField";
 import CandidatePlayers from "./components/candidate/CandidatePlayers";
 import PlayerAddSheet from "./components/playerSearch/PlayerAddSheet";
 
+import { FORMATIONS } from "../../data/formations";
+
+import { getCurrentUser } from "../../lib/authStorage";
+import { saveTeam } from "../../lib/teamStorage";
+
 const MAX_PLAYERS = 23;
 
 export default function MakeTeam() {
+  const navigate = useNavigate();
+
   const [isPlayerSheetOpen, setIsPlayerSheetOpen] = useState(false);
+
   const [candidatePlayers, setCandidatePlayers] = useState([]);
 
   const [isCandidateEditMode, setIsCandidateEditMode] = useState(false);
+
   const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
+
   const [candidateSortType, setCandidateSortType] = useState("added");
 
   const [placedPlayers, setPlacedPlayers] = useState({});
 
   const [activeDrag, setActiveDrag] = useState(null);
 
+  // 팀 이름
+  const [teamName, setTeamName] = useState("MY TEAM 1");
+
+  // 포메이션
+  const [formation, setFormation] = useState("4-3-3");
+
+  // 저장된 팀 ID
+  const [teamId, setTeamId] = useState(null);
+
   // 토스트
   const [toastMessage, setToastMessage] = useState("");
+
   const [isToastOpen, setIsToastOpen] = useState(false);
 
   const toastTimerRef = useRef(null);
-
-  const formation = "4-3-3";
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -74,12 +94,84 @@ export default function MakeTeam() {
   };
 
   // =========================
+  // 뒤로가기
+  // =========================
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  // =========================
+  // 팀 저장
+  // =========================
+
+  const handleSaveTeam = () => {
+    const currentUser = getCurrentUser();
+
+    // 로그인하지 않은 경우
+    if (!currentUser) {
+      showToast("로그인이 필요합니다.");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 700);
+
+      return;
+    }
+
+    const savedTeam = saveTeam({
+      id: teamId,
+      userId: currentUser.id,
+
+      teamName,
+      formation,
+
+      candidatePlayers,
+      placedPlayers,
+    });
+
+    // 첫 저장 후 ID 기억
+    if (!teamId) {
+      setTeamId(savedTeam.id);
+    }
+
+    showToast(teamId ? "팀이 수정되었습니다." : "팀이 저장되었습니다.");
+  };
+
+  // =========================
+  // 팀 이름
+  // =========================
+
+  const handleChangeTeamName = (newTeamName) => {
+    setTeamName(newTeamName);
+  };
+
+  // =========================
+  // 포메이션 변경
+  // =========================
+
+  const handleFormationChange = (newFormation) => {
+    if (newFormation === formation) {
+      return;
+    }
+
+    setFormation(newFormation);
+
+    // 포메이션 변경 시 기존 배치 해제
+    setPlacedPlayers({});
+
+    setIsCandidateEditMode(false);
+    setSelectedCandidateIds([]);
+  };
+
+  // =========================
   // 선수 추가 시트
   // =========================
 
   const openPlayerSheet = () => {
     if (candidatePlayers.length >= MAX_PLAYERS) {
       showToast("최대 23명까지 등록할 수 있습니다.");
+
       return;
     }
 
@@ -105,6 +197,7 @@ export default function MakeTeam() {
 
     if (candidatePlayers.length >= MAX_PLAYERS) {
       showToast("최대 23명까지 등록할 수 있습니다.");
+
       return;
     }
 
@@ -190,13 +283,16 @@ export default function MakeTeam() {
   };
 
   const handleSelectedCandidateDelete = () => {
-    if (selectedCandidateIds.length === 0) return;
+    if (selectedCandidateIds.length === 0) {
+      return;
+    }
 
     const remainingPlayers = candidatePlayers.filter(
       (player) => !selectedCandidateIds.includes(player.pid),
     );
 
     setCandidatePlayers(remainingPlayers);
+
     setSelectedCandidateIds([]);
 
     const remainingVisiblePlayers = visibleCandidatePlayers.filter(
@@ -206,6 +302,60 @@ export default function MakeTeam() {
     if (remainingVisiblePlayers.length === 0) {
       setIsCandidateEditMode(false);
     }
+  };
+
+  // =========================
+  // Fisher-Yates Shuffle
+  // =========================
+
+  const shufflePlayers = (players) => {
+    const shuffledPlayers = [...players];
+
+    for (let i = shuffledPlayers.length - 1; i > 0; i -= 1) {
+      const randomIndex = Math.floor(Math.random() * (i + 1));
+
+      [shuffledPlayers[i], shuffledPlayers[randomIndex]] = [
+        shuffledPlayers[randomIndex],
+        shuffledPlayers[i],
+      ];
+    }
+
+    return shuffledPlayers;
+  };
+
+  // =========================
+  // 랜덤 배치
+  // =========================
+
+  const handleRandomPlace = () => {
+    if (candidatePlayers.length === 0) {
+      showToast("배치할 선수를 먼저 추가해주세요.");
+
+      return;
+    }
+
+    const slots = FORMATIONS[formation] ?? [];
+
+    if (slots.length === 0) {
+      return;
+    }
+
+    const shuffledPlayers = shufflePlayers(candidatePlayers);
+
+    const nextPlacedPlayers = {};
+
+    slots.forEach((slot, index) => {
+      const player = shuffledPlayers[index];
+
+      if (!player) return;
+
+      nextPlacedPlayers[slot.id] = player;
+    });
+
+    setPlacedPlayers(nextPlacedPlayers);
+
+    setIsCandidateEditMode(false);
+    setSelectedCandidateIds([]);
   };
 
   // =========================
@@ -240,7 +390,9 @@ export default function MakeTeam() {
     const activeData = active.data.current;
     const overData = over.data.current;
 
-    if (!activeData || !overData) return;
+    if (!activeData || !overData) {
+      return;
+    }
 
     // 경기장 → 후보 선수 영역
     if (activeData.source === "slot" && overData.type === "candidate-area") {
@@ -259,7 +411,9 @@ export default function MakeTeam() {
       return;
     }
 
-    if (overData.type !== "slot") return;
+    if (overData.type !== "slot") {
+      return;
+    }
 
     const targetSlotId = overData.slotId;
 
@@ -348,12 +502,13 @@ export default function MakeTeam() {
     >
       <main className="min-h-dvh w-full bg-[#333333] text-white">
         <div className="flex min-h-dvh w-full flex-col bg-[#333333]">
-          {/* Header + 상단 Toast */}
           <Header
             title="팀 생성하기"
+            onBack={handleBack}
             rightAction={
               <button
                 type="button"
+                onClick={handleSaveTeam}
                 aria-label="팀 저장"
                 className="flex h-10 w-10 items-center justify-end text-[#B9E000]"
               >
@@ -365,9 +520,16 @@ export default function MakeTeam() {
           <Toast message={toastMessage} isOpen={isToastOpen} />
 
           <div className="px-5 pt-4">
-            <TeamName teamName="MY TEAM 1" />
+            <TeamName
+              teamName={teamName}
+              onChangeTeamName={handleChangeTeamName}
+            />
 
-            <FormationSelect formation={formation} />
+            <FormationSelect
+              formation={formation}
+              onFormationChange={handleFormationChange}
+              onRandomPlace={handleRandomPlace}
+            />
 
             <FormationField
               formation={formation}
@@ -401,12 +563,10 @@ export default function MakeTeam() {
       <DragOverlay dropAnimation={null}>
         {activeDrag?.player ? (
           activeDrag.source === "candidate" ? (
-            <div className="pointer-events-none h-[112px] w-[92px] overflow-hidden rounded-lg bg-[#585353] shadow-xl">
+            <div className="pointer-events-none h-[112px] w-[92px] overflow-hidden rounded-lg bg-[#585353] opacity-80 shadow-xl">
               <div className="flex h-[82px] items-end justify-center overflow-hidden">
-                <img
-                  src={activeDrag.player.image}
-                  alt={activeDrag.player.name}
-                  draggable={false}
+                <PlayerImage
+                  player={activeDrag.player}
                   className="h-full w-full object-contain"
                 />
               </div>
@@ -418,17 +578,15 @@ export default function MakeTeam() {
               </div>
             </div>
           ) : (
-            <div className="pointer-events-none h-[76px] w-[58px] overflow-hidden rounded-md bg-[#585353] shadow-xl">
-              <div className="flex h-[58px] items-end justify-center overflow-hidden">
-                <img
-                  src={activeDrag.player.image}
-                  alt={activeDrag.player.name}
-                  draggable={false}
+            <div className="pointer-events-none h-[84px] w-[64px] overflow-hidden rounded-md bg-[#585353] opacity-80 shadow-xl">
+              <div className="flex h-[64px] items-end justify-center overflow-hidden">
+                <PlayerImage
+                  player={activeDrag.player}
                   className="h-full w-full object-contain"
                 />
               </div>
 
-              <div className="flex h-[18px] items-center border-t border-white/10 px-1.5">
+              <div className="flex h-[20px] items-center border-t border-white/10 px-1.5">
                 <p className="w-full truncate text-center text-[9px] font-medium text-white">
                   {activeDrag.player.name}
                 </p>

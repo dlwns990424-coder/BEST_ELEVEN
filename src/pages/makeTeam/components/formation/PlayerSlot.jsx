@@ -1,6 +1,8 @@
 import { Plus } from "lucide-react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 
+import PlayerImage from "../../../../components/common/PlayerImage";
+
 export default function PlayerSlot({ slotId, type, label, className, player }) {
   const typeStyle = {
     fw: "border-[#C94E38] bg-[#C94E38]/70",
@@ -40,7 +42,7 @@ export default function PlayerSlot({ slotId, type, label, className, player }) {
       {player ? (
         <div
           ref={setDroppableNodeRef}
-          className="absolute left-1/2 top-1/2 h-[76px] w-[58px] -translate-x-1/2 -translate-y-1/2"
+          className="absolute left-1/2 top-1/2 h-[84px] w-[64px] -translate-x-1/2 -translate-y-1/2"
         >
           <div
             ref={setDraggableNodeRef}
@@ -67,16 +69,14 @@ export default function PlayerSlot({ slotId, type, label, className, player }) {
               ${isOver ? "scale-105 ring-2 ring-inset ring-[#B9E000]" : ""}
             `}
           >
-            <div className="flex h-[58px] items-end justify-center overflow-hidden">
-              <img
-                src={player.image}
-                alt={player.name}
-                draggable={false}
+            <div className="flex h-[64px] items-end justify-center overflow-hidden">
+              <PlayerImage
+                player={player}
                 className="pointer-events-none h-full w-full object-contain"
               />
             </div>
 
-            <div className="flex h-[18px] items-center border-t border-white/10 px-1.5">
+            <div className="flex h-[20px] items-center border-t border-white/10 px-1.5">
               <p className="w-full truncate text-center text-[9px] font-medium text-white">
                 {player.name}
               </p>

@@ -1,7 +1,10 @@
 const PLAYER_META_URL =
   "https://open.api.nexon.com/static/fconline/meta/spid.json";
 
-const PLAYER_IMAGE_BASE_URL =
+const PLAYER_ACTION_IMAGE_BASE_URL =
+  "https://fco.dn.nexoncdn.co.kr/live/externalAssets/common/playersAction";
+
+const PLAYER_NORMAL_IMAGE_BASE_URL =
   "https://fco.dn.nexoncdn.co.kr/live/externalAssets/common/players";
 
 let playerCache = null;
@@ -12,9 +15,14 @@ function getPidFromSpid(spid) {
   return Number(String(spid).slice(-6));
 }
 
-// 선수 이미지 URL 생성
-export function getPlayerImageUrl(pid) {
-  return `${PLAYER_IMAGE_BASE_URL}/p${pid}.png`;
+// 선수 액션샷 이미지 URL 생성
+export function getPlayerActionImageUrl(pid) {
+  return `${PLAYER_ACTION_IMAGE_BASE_URL}/p${pid}.png`;
+}
+
+// 선수 정면 이미지 URL 생성
+export function getPlayerNormalImageUrl(pid) {
+  return `${PLAYER_NORMAL_IMAGE_BASE_URL}/p${pid}.png`;
 }
 
 // 시즌별로 존재하는 동일 선수를 pid 기준으로 하나로 합치기
@@ -28,7 +36,12 @@ function mergePlayersByPid(players) {
       playerMap.set(pid, {
         pid,
         name: player.name,
-        image: getPlayerImageUrl(pid),
+
+        // 1순위 액션샷
+        image: getPlayerActionImageUrl(pid),
+
+        // 2순위 정면 이미지
+        fallbackImage: getPlayerNormalImageUrl(pid),
       });
     }
   });
