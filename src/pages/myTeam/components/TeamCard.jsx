@@ -1,18 +1,39 @@
-import { ChevronRight } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
-export default function TeamCard({ team }) {
+export default function TeamCard({
+  team,
+  isEditMode,
+  isSelected,
+  onToggleSelect,
+}) {
   const formationText = team.formation?.split("-").join(" - ") ?? "";
 
+  const handleClick = () => {
+    if (!isEditMode) {
+      return;
+    }
+
+    onToggleSelect(team.id);
+  };
+
   return (
-    <div
-      className="
-        flex min-h-[82px] w-full
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`
+        relative flex min-h-[82px] w-full
         items-center justify-between
         rounded-[9px]
         border border-white/40
         bg-[#585353]
         px-4 py-4
-      "
+        text-left
+        transition-all duration-150
+
+        ${isEditMode ? "cursor-pointer active:scale-[0.98]" : "cursor-default"}
+
+        ${isSelected ? "ring-2 ring-inset ring-[#B9E000]" : ""}
+      `}
     >
       <div className="min-w-0">
         <h2 className="truncate text-[16px] font-normal text-white">
@@ -24,11 +45,23 @@ export default function TeamCard({ team }) {
         </p>
       </div>
 
-      <ChevronRight
-        size={22}
-        strokeWidth={1.7}
-        className="shrink-0 text-white"
-      />
-    </div>
+      {!isEditMode ? (
+        <ChevronRight
+          size={22}
+          strokeWidth={1.7}
+          className="shrink-0 text-white"
+        />
+      ) : (
+        <div
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+            isSelected
+              ? "border-[#B9E000] bg-[#B9E000] text-[#333333]"
+              : "border-white/50 bg-[#333333]/70"
+          }`}
+        >
+          {isSelected && <Check size={13} strokeWidth={3} />}
+        </div>
+      )}
+    </button>
   );
 }
