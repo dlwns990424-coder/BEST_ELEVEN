@@ -4,6 +4,7 @@ import Home from "../pages/home/Home";
 import Login from "../pages/login/Login";
 import MakeTeam from "../pages/makeTeam/MakeTeam";
 import MyTeam from "../pages/myTeam/MyTeam";
+import NotFound from "../pages/notFound/NotFound";
 import SignUp from "../pages/signUp/SignUp";
 
 export default function AppRouter() {
@@ -22,6 +23,9 @@ export default function AppRouter() {
       <Route path="/make-team/:teamId" element={<MakeTeam />} />
 
       <Route path="/my-team" element={<MyTeam />} />
+
+      {/* 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
