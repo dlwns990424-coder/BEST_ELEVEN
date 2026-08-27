@@ -8,6 +8,8 @@ import Toast from "../../components/common/Toast";
 
 import { signUpUser } from "../../lib/authStorage";
 
+import { getTempTeamDraft } from "../../lib/teamStorage";
+
 import logo from "../../../img/LOGO.png";
 
 export default function SignUp() {
@@ -33,6 +35,9 @@ export default function SignUp() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const toastTimerRef = useRef(null);
+
+  // MakeTeam에서 로그인 → 회원가입으로 온 상태인지 확인
+  const hasTempTeamDraft = Boolean(getTempTeamDraft());
 
   // =========================
   // 토스트
@@ -87,12 +92,40 @@ export default function SignUp() {
   };
 
   // =========================
+  // 뒤로가기
+  // =========================
+
+  const handleBack = () => {
+    // MakeTeam 저장 흐름에서 회원가입으로 온 경우
+    // Login 화면으로 돌아가되 히스토리는 추가하지 않음
+    if (hasTempTeamDraft) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    navigate(-1);
+  };
+
+  // =========================
   // 회원가입 완료
   // =========================
 
   const handleSuccessConfirm = () => {
     setIsSuccessModalOpen(false);
 
+    // MakeTeam 저장 흐름이라면 SignUp을 Login으로 교체
+    if (hasTempTeamDraft) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // 일반 회원가입
     navigate("/login");
   };
 
@@ -105,7 +138,7 @@ export default function SignUp() {
         <header className="flex h-8 items-center">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             aria-label="뒤로가기"
             className="flex h-8 w-8 items-center justify-start text-white/80"
           >
@@ -263,7 +296,11 @@ export default function SignUp() {
               이미 계정이 있으신가요?
             </span>
 
-            <Link to="/login" className="font-semibold text-[#B9E000]">
+            <Link
+              to="/login"
+              replace={hasTempTeamDraft}
+              className="font-semibold text-[#B9E000]"
+            >
               로그인
             </Link>
           </div>

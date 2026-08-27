@@ -38,7 +38,7 @@ import {
 
 const MAX_PLAYERS = 23;
 
-const DEFAULT_TEAM_NAME = "MY TEAM 1";
+const DEFAULT_TEAM_NAME = "MY TEAM";
 const DEFAULT_FORMATION = "4-3-3";
 
 // =========================

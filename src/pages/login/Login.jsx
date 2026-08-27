@@ -27,6 +27,9 @@ export default function Login() {
 
   const toastTimerRef = useRef(null);
 
+  // MakeTeam에서 로그인하러 온 상태인지 확인
+  const hasTempTeamDraft = Boolean(getTempTeamDraft());
+
   // =========================
   // 토스트
   // =========================
@@ -189,7 +192,11 @@ export default function Login() {
               아직 계정이 없으신가요?
             </span>
 
-            <Link to="/signup" className="font-semibold text-[#B9E000]">
+            <Link
+              to="/signup"
+              replace={hasTempTeamDraft}
+              className="font-semibold text-[#B9E000]"
+            >
               회원가입
             </Link>
           </div>
