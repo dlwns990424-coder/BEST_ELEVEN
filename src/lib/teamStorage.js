@@ -1,4 +1,5 @@
 const TEAMS_KEY = "best_eleven_teams";
+const TEMP_TEAM_DRAFT_KEY = "best_eleven_temp_team_draft";
 
 // =========================
 // 전체 팀 조회
@@ -53,6 +54,7 @@ export function saveTeam(teamData) {
       const updatedTeam = {
         ...teams[teamIndex],
         ...teamData,
+
         createdAt: teams[teamIndex].createdAt,
         updatedAt: now,
       };
@@ -97,4 +99,38 @@ export function deleteTeam(teamId, userId) {
   );
 
   localStorage.setItem(TEAMS_KEY, JSON.stringify(nextTeams));
+}
+
+// =========================
+// 로그인 전 임시 팀 저장
+// =========================
+
+export function saveTempTeamDraft(draft) {
+  try {
+    sessionStorage.setItem(TEMP_TEAM_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    return;
+  }
+}
+
+// =========================
+// 로그인 전 임시 팀 조회
+// =========================
+
+export function getTempTeamDraft() {
+  try {
+    const draft = sessionStorage.getItem(TEMP_TEAM_DRAFT_KEY);
+
+    return draft ? JSON.parse(draft) : null;
+  } catch {
+    return null;
+  }
+}
+
+// =========================
+// 로그인 전 임시 팀 삭제
+// =========================
+
+export function clearTempTeamDraft() {
+  sessionStorage.removeItem(TEMP_TEAM_DRAFT_KEY);
 }

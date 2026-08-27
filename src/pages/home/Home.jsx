@@ -71,7 +71,7 @@ export default function Home() {
       {/* =========================
           로고 / 타이틀
       ========================= */}
-      <section className="mt-[100px] flex w-full flex-col items-center px-4">
+      <section className="mt-[100px] flex w-full flex-col items-center px-5">
         <img
           src={logo}
           alt="BEST ELEVEN"
@@ -93,7 +93,7 @@ export default function Home() {
         type="button"
         onClick={handleMakeTeam}
         className="
-          absolute bottom-[160px] left-4 right-4
+          absolute bottom-[160px] left-5 right-5
           flex h-[53px] items-center justify-center
           rounded-lg
           bg-[#B9E000]
@@ -122,7 +122,7 @@ export default function Home() {
           type="button"
           onClick={handleMyTeam}
           className="
-            absolute bottom-[77px] left-4 right-4
+            absolute bottom-[77px] left-5 right-5
             flex h-[53px] items-center justify-center
             rounded-lg
             border border-[#B9E000]

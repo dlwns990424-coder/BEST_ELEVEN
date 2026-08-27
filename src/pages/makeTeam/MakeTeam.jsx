@@ -1,6 +1,9 @@
-import { useMemo, useRef, useState } from "react";
-import { Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { Save, X } from "lucide-react";
+
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+
 import {
   closestCenter,
   DndContext,
@@ -24,12 +27,58 @@ import PlayerAddSheet from "./components/playerSearch/PlayerAddSheet";
 import { FORMATIONS } from "../../data/formations";
 
 import { getCurrentUser } from "../../lib/authStorage";
-import { saveTeam } from "../../lib/teamStorage";
+
+import {
+  clearTempTeamDraft,
+  getTeamById,
+  getTempTeamDraft,
+  saveTeam,
+  saveTempTeamDraft,
+} from "../../lib/teamStorage";
 
 const MAX_PLAYERS = 23;
 
+const DEFAULT_TEAM_NAME = "MY TEAM 1";
+const DEFAULT_FORMATION = "4-3-3";
+
+// =========================
+// 변경사항 비교용 데이터 생성
+// =========================
+
+function createTeamSnapshot({
+  teamName,
+  formation,
+  candidatePlayers,
+  placedPlayers,
+}) {
+  const normalizedPlacedPlayers = Object.keys(placedPlayers)
+    .sort()
+    .reduce((result, slotId) => {
+      result[slotId] = placedPlayers[slotId];
+
+      return result;
+    }, {});
+
+  return JSON.stringify({
+    teamName,
+    formation,
+    candidatePlayers,
+    placedPlayers: normalizedPlacedPlayers,
+  });
+}
+
+const DEFAULT_TEAM_SNAPSHOT = createTeamSnapshot({
+  teamName: DEFAULT_TEAM_NAME,
+  formation: DEFAULT_FORMATION,
+  candidatePlayers: [],
+  placedPlayers: {},
+});
+
 export default function MakeTeam() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { teamId: routeTeamId } = useParams();
 
   const [isPlayerSheetOpen, setIsPlayerSheetOpen] = useState(false);
 
@@ -46,13 +95,22 @@ export default function MakeTeam() {
   const [activeDrag, setActiveDrag] = useState(null);
 
   // 팀 이름
-  const [teamName, setTeamName] = useState("MY TEAM 1");
+  const [teamName, setTeamName] = useState(DEFAULT_TEAM_NAME);
 
   // 포메이션
-  const [formation, setFormation] = useState("4-3-3");
+  const [formation, setFormation] = useState(DEFAULT_FORMATION);
 
-  // 저장된 팀 ID
+  // 현재 저장된 팀 ID
   const [teamId, setTeamId] = useState(null);
+
+  // 로그인 필요 모달
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // 뒤로가기 확인 모달
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+
+  // 마지막으로 저장된 상태
+  const savedSnapshotRef = useRef(DEFAULT_TEAM_SNAPSHOT);
 
   // 토스트
   const [toastMessage, setToastMessage] = useState("");
@@ -77,6 +135,137 @@ export default function MakeTeam() {
   const sensors = useSensors(mouseSensor, touchSensor);
 
   // =========================
+  // 현재 팀 상태
+  // =========================
+
+  const currentSnapshot = useMemo(
+    () =>
+      createTeamSnapshot({
+        teamName,
+        formation,
+        candidatePlayers,
+        placedPlayers,
+      }),
+    [teamName, formation, candidatePlayers, placedPlayers],
+  );
+
+  // =========================
+  // 저장된 팀 / 로그인 전 임시 팀 불러오기
+  // =========================
+
+  useEffect(() => {
+    // 로그인 후 MakeTeam으로 돌아온 경우
+    if (location.state?.restoreDraft) {
+      const tempDraft = getTempTeamDraft();
+
+      if (tempDraft) {
+        const draftTeamName = tempDraft.teamName || DEFAULT_TEAM_NAME;
+
+        const draftFormation = tempDraft.formation || DEFAULT_FORMATION;
+
+        const draftCandidatePlayers = Array.isArray(tempDraft.candidatePlayers)
+          ? tempDraft.candidatePlayers
+          : [];
+
+        const draftPlacedPlayers =
+          tempDraft.placedPlayers && typeof tempDraft.placedPlayers === "object"
+            ? tempDraft.placedPlayers
+            : {};
+
+        setTeamId(tempDraft.teamId ?? routeTeamId ?? null);
+
+        setTeamName(draftTeamName);
+
+        setFormation(draftFormation);
+
+        setCandidatePlayers(draftCandidatePlayers);
+
+        setPlacedPlayers(draftPlacedPlayers);
+
+        savedSnapshotRef.current =
+          tempDraft.savedSnapshot || DEFAULT_TEAM_SNAPSHOT;
+
+        setIsCandidateEditMode(false);
+        setSelectedCandidateIds([]);
+
+        clearTempTeamDraft();
+
+        return;
+      }
+    }
+
+    // 새 팀 생성
+    if (!routeTeamId) {
+      savedSnapshotRef.current = DEFAULT_TEAM_SNAPSHOT;
+
+      return;
+    }
+
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    const savedTeam = getTeamById(routeTeamId);
+
+    // 존재하지 않는 팀
+    if (!savedTeam) {
+      navigate("/my-team", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // 다른 사용자의 팀 접근 방지
+    if (savedTeam.userId !== currentUser.id) {
+      navigate("/my-team", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    const savedTeamName = savedTeam.teamName || DEFAULT_TEAM_NAME;
+
+    const savedFormation = savedTeam.formation || DEFAULT_FORMATION;
+
+    const savedCandidatePlayers = Array.isArray(savedTeam.candidatePlayers)
+      ? savedTeam.candidatePlayers
+      : [];
+
+    const savedPlacedPlayers =
+      savedTeam.placedPlayers && typeof savedTeam.placedPlayers === "object"
+        ? savedTeam.placedPlayers
+        : {};
+
+    setTeamId(savedTeam.id);
+
+    setTeamName(savedTeamName);
+
+    setFormation(savedFormation);
+
+    setCandidatePlayers(savedCandidatePlayers);
+
+    setPlacedPlayers(savedPlacedPlayers);
+
+    savedSnapshotRef.current = createTeamSnapshot({
+      teamName: savedTeamName,
+      formation: savedFormation,
+      candidatePlayers: savedCandidatePlayers,
+      placedPlayers: savedPlacedPlayers,
+    });
+
+    setIsCandidateEditMode(false);
+    setSelectedCandidateIds([]);
+  }, [routeTeamId, location.state, navigate]);
+
+  // =========================
   // 토스트
   // =========================
 
@@ -98,6 +287,24 @@ export default function MakeTeam() {
   // =========================
 
   const handleBack = () => {
+    const hasUnsavedChanges = currentSnapshot !== savedSnapshotRef.current;
+
+    if (hasUnsavedChanges) {
+      setIsLeaveModalOpen(true);
+
+      return;
+    }
+
+    navigate(-1);
+  };
+
+  // =========================
+  // 저장하지 않고 나가기
+  // =========================
+
+  const handleLeaveWithoutSave = () => {
+    setIsLeaveModalOpen(false);
+
     navigate(-1);
   };
 
@@ -108,34 +315,81 @@ export default function MakeTeam() {
   const handleSaveTeam = () => {
     const currentUser = getCurrentUser();
 
-    // 로그인하지 않은 경우
+    // 비로그인
     if (!currentUser) {
-      showToast("로그인이 필요합니다.");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 700);
+      setIsLoginModalOpen(true);
 
       return;
     }
 
     const savedTeam = saveTeam({
       id: teamId,
+
       userId: currentUser.id,
 
       teamName,
+
       formation,
 
       candidatePlayers,
+
       placedPlayers,
     });
 
-    // 첫 저장 후 ID 기억
-    if (!teamId) {
+    // 저장 시점 상태를 기준 상태로 변경
+    savedSnapshotRef.current = currentSnapshot;
+
+    const isNewTeam = !teamId || savedTeam.id !== teamId;
+
+    // 새로운 팀
+    if (isNewTeam) {
       setTeamId(savedTeam.id);
+
+      navigate(`/make-team/${savedTeam.id}`, {
+        replace: true,
+      });
+
+      showToast("팀이 저장되었습니다.");
+
+      return;
     }
 
-    showToast(teamId ? "팀이 수정되었습니다." : "팀이 저장되었습니다.");
+    // 기존 팀 수정
+    showToast("팀이 수정되었습니다.");
+  };
+
+  // =========================
+  // 로그인 페이지 이동
+  // =========================
+
+  const handleGoLogin = () => {
+    const returnPath =
+      routeTeamId || teamId
+        ? `/make-team/${routeTeamId || teamId}`
+        : "/make-team";
+
+    // 현재 MakeTeam 작업 상태 임시 저장
+    saveTempTeamDraft({
+      teamId,
+
+      teamName,
+
+      formation,
+
+      candidatePlayers,
+
+      placedPlayers,
+
+      // 로그인 후 돌아왔을 때
+      // 저장 전 변경사항 여부도 유지
+      savedSnapshot: savedSnapshotRef.current,
+
+      returnPath,
+    });
+
+    setIsLoginModalOpen(false);
+
+    navigate("/login");
   };
 
   // =========================
@@ -157,7 +411,7 @@ export default function MakeTeam() {
 
     setFormation(newFormation);
 
-    // 포메이션 변경 시 기존 배치 해제
+    // 기존 경기장 배치 초기화
     setPlacedPlayers({});
 
     setIsCandidateEditMode(false);
@@ -205,6 +459,7 @@ export default function MakeTeam() {
       ...prevPlayers,
       {
         ...player,
+
         addedAt: Date.now(),
       },
     ]);
@@ -252,6 +507,7 @@ export default function MakeTeam() {
 
   const handleCandidateEditComplete = () => {
     setIsCandidateEditMode(false);
+
     setSelectedCandidateIds([]);
   };
 
@@ -276,6 +532,7 @@ export default function MakeTeam() {
 
     if (isAllSelected) {
       setSelectedCandidateIds([]);
+
       return;
     }
 
@@ -355,6 +612,7 @@ export default function MakeTeam() {
     setPlacedPlayers(nextPlacedPlayers);
 
     setIsCandidateEditMode(false);
+
     setSelectedCandidateIds([]);
   };
 
@@ -388,6 +646,7 @@ export default function MakeTeam() {
     if (!over) return;
 
     const activeData = active.data.current;
+
     const overData = over.data.current;
 
     if (!activeData || !overData) {
@@ -460,7 +719,9 @@ export default function MakeTeam() {
     if (activeData.source === "slot") {
       const sourceSlotId = activeData.slotId;
 
-      if (!sourceSlotId) return;
+      if (!sourceSlotId) {
+        return;
+      }
 
       if (sourceSlotId === targetSlotId) {
         return;
@@ -560,6 +821,9 @@ export default function MakeTeam() {
         />
       </main>
 
+      {/* =========================
+          Drag Overlay
+      ========================= */}
       <DragOverlay dropAnimation={null}>
         {activeDrag?.player ? (
           activeDrag.source === "candidate" ? (
@@ -595,6 +859,71 @@ export default function MakeTeam() {
           )
         ) : null}
       </DragOverlay>
+
+      {/* =========================
+          로그인 필요 모달
+      ========================= */}
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
+          <div className="relative w-full max-w-[350px] rounded-xl bg-[#333333] px-5 pb-5 pt-12 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setIsLoginModalOpen(false)}
+              aria-label="닫기"
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center text-white/60"
+            >
+              <X size={20} strokeWidth={1.7} />
+            </button>
+
+            <p className="text-center text-[16px] text-white">
+              팀을 저장하려면 로그인이 필요합니다.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleGoLogin}
+              className="mt-7 h-[53px] w-full rounded-lg bg-[#B9E000] text-[16px] font-bold text-[#222222] transition-all active:scale-[0.98] active:bg-[#9FBE00]"
+            >
+              로그인하기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* =========================
+          저장하지 않고 나가기 모달
+      ========================= */}
+      {isLeaveModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-[350px] rounded-xl bg-[#333333] px-5 py-6 shadow-2xl">
+            <h2 className="text-center text-[18px] font-semibold text-white">
+              변경사항이 저장되지 않았어요
+            </h2>
+
+            <p className="mt-3 text-center text-[14px] font-normal text-white/60">
+              저장하지 않고 나가시겠습니까?
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLeaveModalOpen(false)}
+                className="h-[50px] flex-1 rounded-lg bg-[#585353] text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLeaveWithoutSave}
+                className="h-[50px] flex-1 rounded-lg bg-[#B9E000] text-[15px] font-bold text-[#222222] transition-all active:scale-[0.98] active:bg-[#9FBE00]"
+              >
+                나가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DndContext>
   );
 }

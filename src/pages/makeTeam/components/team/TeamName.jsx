@@ -1,32 +1,80 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 
 export default function TeamName({ teamName, onChangeTeamName }) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editName, setEditName] = useState(teamName);
 
+  // 수정 시작 전 이름 보관
+  const originalNameRef = useRef(teamName);
+
+  // 저장된 팀을 불러왔을 때 이름 동기화
   useEffect(() => {
-    setEditName(teamName);
-  }, [teamName]);
+    if (!isEditMode) {
+      setEditName(teamName);
+    }
+  }, [teamName, isEditMode]);
+
+  // =========================
+  // 수정 시작
+  // =========================
 
   const handleEditStart = () => {
+    originalNameRef.current = teamName;
+
     setEditName(teamName);
     setIsEditMode(true);
   };
 
+  // =========================
+  // 이름 입력
+  // =========================
+
+  const handleNameChange = (event) => {
+    const value = event.target.value;
+
+    setEditName(value);
+
+    // 입력하는 순간 MakeTeam의 teamName도 변경
+    if (value.trim()) {
+      onChangeTeamName(value);
+    }
+  };
+
+  // =========================
+  // 취소
+  // =========================
+
   const handleCancel = () => {
-    setEditName(teamName);
+    const originalName = originalNameRef.current;
+
+    setEditName(originalName);
+
+    // 수정 전 이름으로 다시 복원
+    onChangeTeamName(originalName);
+
     setIsEditMode(false);
   };
+
+  // =========================
+  // 완료
+  // =========================
 
   const handleComplete = () => {
     const trimmedName = editName.trim();
 
     if (!trimmedName) return;
 
+    setEditName(trimmedName);
+
     onChangeTeamName(trimmedName);
+
     setIsEditMode(false);
   };
+
+  // =========================
+  // 키보드
+  // =========================
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
@@ -47,9 +95,9 @@ export default function TeamName({ teamName, onChangeTeamName }) {
           <button
             type="button"
             onClick={handleEditStart}
-            className="flex items-center gap-1 text-[14px] text-white/50"
+            className="flex items-center gap-1 !text-[14px] text-white/50"
           >
-            <Pencil size={14} />
+            <Pencil size={13} />
             수정
           </button>
         </div>
@@ -59,7 +107,7 @@ export default function TeamName({ teamName, onChangeTeamName }) {
             <input
               type="text"
               value={editName}
-              onChange={(event) => setEditName(event.target.value)}
+              onChange={handleNameChange}
               maxLength={15}
               onKeyDown={handleKeyDown}
               autoFocus

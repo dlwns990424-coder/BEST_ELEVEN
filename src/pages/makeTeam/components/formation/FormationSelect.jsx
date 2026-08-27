@@ -48,7 +48,7 @@ export default function FormationSelect({
 
   return (
     <section className="mt-6">
-      <p className="mb-2 text-[12px] font-normal">FORMATION</p>
+      <p className="mb-2 text-[14px] font-normal">FORMATION</p>
 
       <div className="flex items-center justify-between">
         <div ref={formationRef} className="relative">

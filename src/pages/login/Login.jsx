@@ -3,7 +3,9 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import Toast from "../../components/common/Toast";
+
 import { loginUser } from "../../lib/authStorage";
+import { getTempTeamDraft } from "../../lib/teamStorage";
 
 import logo from "../../../img/LOGO.png";
 
@@ -51,10 +53,28 @@ export default function Login() {
       return;
     }
 
+    const tempTeamDraft = getTempTeamDraft();
+
     showToast("로그인되었습니다.");
 
     setTimeout(() => {
-      navigate("/");
+      // MakeTeam에서 로그인하러 온 경우
+      if (tempTeamDraft) {
+        navigate(tempTeamDraft.returnPath || "/make-team", {
+          replace: true,
+
+          state: {
+            restoreDraft: true,
+          },
+        });
+
+        return;
+      }
+
+      // 일반 로그인
+      navigate("/", {
+        replace: true,
+      });
     }, 700);
   };
 

@@ -29,6 +29,9 @@ export default function MyTeam() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTeamIds, setSelectedTeamIds] = useState([]);
 
+  // 삭제 확인 모달
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const sortRef = useRef(null);
 
   // =========================
@@ -50,13 +53,16 @@ export default function MyTeam() {
   const sortedTeams = useMemo(() => {
     const nextTeams = [...teams];
 
+    // 오래된순
     if (sortType === "oldest") {
       return nextTeams.sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          new Date(a.updatedAt ?? a.createdAt).getTime() -
+          new Date(b.updatedAt ?? b.createdAt).getTime(),
       );
     }
 
+    // 이름순
     if (sortType === "name") {
       return nextTeams.sort((a, b) =>
         a.teamName.localeCompare(b.teamName, "ko"),
@@ -102,6 +108,14 @@ export default function MyTeam() {
     latest: "최신순",
     oldest: "오래된순",
     name: "이름순",
+  };
+
+  // =========================
+  // 팀 열기
+  // =========================
+
+  const handleOpenTeam = (teamId) => {
+    navigate(`/make-team/${teamId}`);
   };
 
   // =========================
@@ -159,10 +173,30 @@ export default function MyTeam() {
   };
 
   // =========================
-  // 선택 삭제
+  // 선택 삭제 클릭
   // =========================
 
   const handleSelectedDelete = () => {
+    if (selectedTeamIds.length === 0) {
+      return;
+    }
+
+    setIsDeleteModalOpen(true);
+  };
+
+  // =========================
+  // 삭제 취소
+  // =========================
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+  };
+
+  // =========================
+  // 실제 삭제
+  // =========================
+
+  const handleDeleteConfirm = () => {
     if (selectedTeamIds.length === 0 || !currentUser) {
       return;
     }
@@ -177,7 +211,9 @@ export default function MyTeam() {
 
     setTeams(remainingTeams);
     setSelectedTeamIds([]);
+    setIsDeleteModalOpen(false);
 
+    // 모든 팀을 삭제한 경우
     if (remainingTeams.length === 0) {
       setIsEditMode(false);
     }
@@ -325,6 +361,7 @@ export default function MyTeam() {
                 isEditMode={isEditMode}
                 isSelected={selectedTeamIds.includes(team.id)}
                 onToggleSelect={handleToggleTeam}
+                onOpenTeam={handleOpenTeam}
               />
             ))}
           </div>
@@ -344,6 +381,37 @@ export default function MyTeam() {
           </div>
         )}
       </section>
+
+      {/* =========================
+          삭제 확인 모달
+      ========================= */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-[350px] rounded-xl bg-[#333333] px-5 py-6 shadow-2xl">
+            <p className="text-center text-[16px] font-medium text-white">
+              선택한 팀을 삭제하시겠습니까?
+            </p>
+
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                className="h-[50px] flex-1 rounded-lg bg-[#585353] text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="h-[50px] flex-1 rounded-lg bg-red-500 text-[15px] font-semibold text-white transition-all active:scale-[0.98] active:bg-red-600"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

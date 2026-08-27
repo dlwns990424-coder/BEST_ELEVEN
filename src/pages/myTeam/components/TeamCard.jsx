@@ -5,15 +5,19 @@ export default function TeamCard({
   isEditMode,
   isSelected,
   onToggleSelect,
+  onOpenTeam,
 }) {
   const formationText = team.formation?.split("-").join(" - ") ?? "";
 
   const handleClick = () => {
-    if (!isEditMode) {
+    // 편집 중이면 팀 선택
+    if (isEditMode) {
+      onToggleSelect(team.id);
       return;
     }
 
-    onToggleSelect(team.id);
+    // 일반 상태면 저장된 팀 열기
+    onOpenTeam(team.id);
   };
 
   return (
@@ -29,8 +33,7 @@ export default function TeamCard({
         px-4 py-4
         text-left
         transition-all duration-150
-
-        ${isEditMode ? "cursor-pointer active:scale-[0.98]" : "cursor-default"}
+        active:scale-[0.98]
 
         ${isSelected ? "ring-2 ring-inset ring-[#B9E000]" : ""}
       `}
