@@ -33,7 +33,7 @@ export default function CandidateCard({
       {...(!isEditMode ? attributes : {})}
       {...(!isEditMode ? listeners : {})}
       className={`
-        relative h-[112px] min-w-[92px] select-none overflow-hidden
+        relative h-[112px] w-[92px] min-w-[92px] shrink-0 select-none overflow-hidden
         rounded-lg bg-[#585353]
         transition-all duration-150
 
@@ -72,7 +72,7 @@ export default function CandidateCard({
       </div>
 
       <div className="flex h-[30px] items-center border-t border-white/10 px-2">
-        <p className="truncate text-[12px]">{player.name}</p>
+        <p className="w-full truncate text-[12px]">{player.name}</p>
       </div>
     </div>
   );
