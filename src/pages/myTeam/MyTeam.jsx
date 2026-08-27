@@ -251,7 +251,7 @@ export default function MyTeam() {
               <button
                 type="button"
                 onClick={() => setIsSortOpen((prev) => !prev)}
-                className="flex h-9 items-center gap-2 text-[14px] font-normal text-white"
+                className="flex h-9 items-center gap-2 !text-[14px] font-normal text-white"
               >
                 <span>{sortLabel[sortType]}</span>
 
@@ -269,7 +269,7 @@ export default function MyTeam() {
                   <button
                     type="button"
                     onClick={() => handleSortChange("latest")}
-                    className={`flex h-10 w-full items-center justify-between px-3 text-[13px] ${
+                    className={`flex h-10 w-full items-center justify-between px-3 !text-[14px] ${
                       sortType === "latest" ? "text-[#B9E000]" : "text-white"
                     }`}
                   >
@@ -283,7 +283,7 @@ export default function MyTeam() {
                   <button
                     type="button"
                     onClick={() => handleSortChange("oldest")}
-                    className={`flex h-10 w-full items-center justify-between px-3 text-[13px] ${
+                    className={`flex h-10 w-full items-center justify-between px-3 !text-[14px] ${
                       sortType === "oldest" ? "text-[#B9E000]" : "text-white"
                     }`}
                   >
@@ -297,7 +297,7 @@ export default function MyTeam() {
                   <button
                     type="button"
                     onClick={() => handleSortChange("name")}
-                    className={`flex h-10 w-full items-center justify-between px-3 text-[13px] ${
+                    className={`flex h-10 w-full items-center justify-between px-3 !text-[14px] ${
                       sortType === "name" ? "text-[#B9E000]" : "text-white"
                     }`}
                   >

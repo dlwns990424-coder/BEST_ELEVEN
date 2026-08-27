@@ -7,11 +7,11 @@ import CandidateCard from "./CandidateCard";
 const SORT_OPTIONS = [
   {
     value: "added",
-    label: "추가순",
+    label: "등록순",
   },
   {
     value: "latest",
-    label: "최근 추가순",
+    label: "최신순",
   },
   {
     value: "name",
@@ -51,7 +51,7 @@ export default function CandidatePlayers({
     players.every((player) => selectedCandidateIds.includes(player.pid));
 
   const currentSortLabel =
-    SORT_OPTIONS.find((option) => option.value === sortType)?.label ?? "추가순";
+    SORT_OPTIONS.find((option) => option.value === sortType)?.label ?? "등록순";
 
   const handleSortChange = (value) => {
     onSortChange(value);
@@ -85,7 +85,7 @@ export default function CandidatePlayers({
           <button
             type="button"
             onClick={onEditStart}
-            className="text-[12px] text-white/50"
+            className="!text-[14px] text-white/50"
           >
             편집
           </button>
@@ -94,7 +94,7 @@ export default function CandidatePlayers({
             <button
               type="button"
               onClick={() => setIsSortOpen((prev) => !prev)}
-              className="flex items-center gap-1 text-[12px] text-white/50"
+              className="flex items-center gap-1 !text-[14px] text-white/50"
             >
               {currentSortLabel}
 
