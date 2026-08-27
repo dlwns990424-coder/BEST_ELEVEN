@@ -79,13 +79,22 @@ a {
   padding-right: max(20px, env(safe-area-inset-right, 0px));
 }
 
-/* Home 팀 생성 버튼 */
+/* Home 로그인 상태 - 팀 생성 버튼 */
 .home-primary-action {
   left: max(20px, env(safe-area-inset-left, 0px));
 
   right: max(20px, env(safe-area-inset-right, 0px));
 
-  bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Home 비로그인 상태 - 팀 생성 버튼 */
+.home-primary-action-guest {
+  left: max(20px, env(safe-area-inset-left, 0px));
+
+  right: max(20px, env(safe-area-inset-right, 0px));
+
+  bottom: calc(57px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Home 내가 만든 팀 버튼 */
@@ -94,7 +103,7 @@ a {
 
   right: max(20px, env(safe-area-inset-right, 0px));
 
-  bottom: calc(77px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(57px + env(safe-area-inset-bottom, 0px));
 }
 
 /* 로그인 / 회원가입 */

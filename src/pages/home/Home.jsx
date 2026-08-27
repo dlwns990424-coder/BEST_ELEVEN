@@ -92,8 +92,8 @@ export default function Home() {
       <button
         type="button"
         onClick={handleMakeTeam}
-        className="
-          home-primary-action
+        className={`
+          ${currentUser ? "home-primary-action" : "home-primary-action-guest"}
           absolute
           flex h-[53px] items-center justify-center
           rounded-lg
@@ -102,7 +102,7 @@ export default function Home() {
           transition-all
           active:scale-[0.98]
           active:bg-[#9FBE00]
-        "
+        `}
       >
         <span>팀 생성하기</span>
 
