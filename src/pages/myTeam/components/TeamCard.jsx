@@ -9,6 +9,25 @@ export default function TeamCard({
 }) {
   const formationText = team.formation?.split("-").join(" - ") ?? "";
 
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    const targetDate = new Date(date);
+
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const day = String(targetDate.getDate()).padStart(2, "0");
+
+    return `${year}.${month}.${day}`;
+  };
+
+  const isUpdated =
+    team.createdAt && team.updatedAt && team.createdAt !== team.updatedAt;
+
+  const dateText = isUpdated
+    ? `최근 수정 · ${formatDate(team.updatedAt)}`
+    : `생성 · ${formatDate(team.createdAt ?? team.updatedAt)}`;
+
   const handleClick = () => {
     // 편집 중이면 팀 선택
     if (isEditMode) {
@@ -25,7 +44,7 @@ export default function TeamCard({
       type="button"
       onClick={handleClick}
       className={`
-        relative flex min-h-[82px] w-full
+        relative flex min-h-[104px] w-full
         items-center justify-between
         rounded-[9px]
         border border-white/40
@@ -43,9 +62,15 @@ export default function TeamCard({
           {team.teamName}
         </h2>
 
-        <p className="mt-3 text-[14px] font-normal text-white">
+        <p className="mt-2 text-[14px] font-normal text-white">
           {formationText}
         </p>
+
+        {(team.createdAt || team.updatedAt) && (
+          <p className="mt-2 text-[12px] font-normal text-white/45">
+            {dateText}
+          </p>
+        )}
       </div>
 
       {!isEditMode ? (
