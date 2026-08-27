@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { Search, X } from "lucide-react";
 
 import { searchPlayers } from "../../../../api/playerApi";
@@ -14,11 +15,68 @@ export default function PlayerAddSheet({
   onAddPlayer,
 }) {
   const [keyword, setKeyword] = useState("");
+
   const [players, setPlayers] = useState([]);
+
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const [isLoading, setIsLoading] = useState(false);
+
   const [error, setError] = useState("");
+
+  // =========================
+  // Bottom Sheet 열림
+  // 배경 스크롤 잠금
+  // =========================
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const scrollY = window.scrollY;
+
+    const originalPosition = document.body.style.position;
+
+    const originalTop = document.body.style.top;
+
+    const originalLeft = document.body.style.left;
+
+    const originalRight = document.body.style.right;
+
+    const originalWidth = document.body.style.width;
+
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.position = "fixed";
+
+    document.body.style.top = `-${scrollY}px`;
+
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.position = originalPosition;
+
+      document.body.style.top = originalTop;
+
+      document.body.style.left = originalLeft;
+
+      document.body.style.right = originalRight;
+
+      document.body.style.width = originalWidth;
+
+      document.body.style.overflow = originalOverflow;
+
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
+  // =========================
+  // 선수 검색
+  // =========================
 
   useEffect(() => {
     const searchKeyword = keyword.trim();
@@ -30,6 +88,7 @@ export default function PlayerAddSheet({
       setPlayers([]);
       setError("");
       setIsLoading(false);
+
       return;
     }
 
@@ -44,8 +103,6 @@ export default function PlayerAddSheet({
 
         if (isCancelled) return;
 
-        // 여기서 20명으로 자르지 않고
-        // 검색 결과 전체를 저장
         setPlayers(result);
       } catch (error) {
         if (isCancelled) return;
@@ -53,6 +110,7 @@ export default function PlayerAddSheet({
         console.error("선수 검색 실패:", error);
 
         setPlayers([]);
+
         setError("선수 검색 중 오류가 발생했습니다.");
       } finally {
         if (!isCancelled) {
@@ -68,11 +126,31 @@ export default function PlayerAddSheet({
     };
   }, [keyword]);
 
+  // =========================
+  // Bottom Sheet 닫기
+  // =========================
+
+  const handleClose = () => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    onClose();
+  };
+
+  // =========================
   // 현재 화면에 보여줄 선수
+  // =========================
+
   const visiblePlayers = players.slice(0, visibleCount);
 
-  // 아직 보여주지 않은 선수가 있는지
   const hasMorePlayers = visibleCount < players.length;
+
+  // =========================
+  // 더보기
+  // =========================
 
   const handleLoadMore = () => {
     setVisibleCount((prevCount) =>
@@ -90,7 +168,7 @@ export default function PlayerAddSheet({
       <button
         type="button"
         aria-label="선수 추가 닫기"
-        onClick={onClose}
+        onClick={handleClose}
         className={`absolute inset-0 h-full w-full bg-black/60 transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
@@ -98,7 +176,7 @@ export default function PlayerAddSheet({
 
       {/* Bottom Sheet */}
       <section
-        className={`absolute bottom-0 left-1/2 flex h-[72dvh] w-full max-w-[390px] -translate-x-1/2 flex-col rounded-t-[20px] bg-[#333333] px-5 pb-8 pt-3 transition-transform duration-300 ${
+        className={`bottom-sheet-safe absolute bottom-0 left-1/2 flex h-[72dvh] w-full max-w-[390px] -translate-x-1/2 flex-col overscroll-contain rounded-t-[20px] bg-[#333333] pt-3 transition-transform duration-300 ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -112,7 +190,7 @@ export default function PlayerAddSheet({
           <button
             type="button"
             aria-label="닫기"
-            onClick={onClose}
+            onClick={handleClose}
             className="flex h-10 w-10 items-center justify-end"
           >
             <X size={22} />
@@ -122,21 +200,23 @@ export default function PlayerAddSheet({
         {/* Search */}
         <div className="relative mt-5">
           <input
-            type="text"
+            type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="선수 이름을 검색해주세요"
+            enterKeyHint="search"
+            autoComplete="off"
             className="h-12 w-full rounded-lg bg-[#585353] pl-4 pr-12 text-[16px] text-white outline-none placeholder:text-white/40"
           />
 
           <Search
             size={20}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50"
+            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50"
           />
         </div>
 
         {/* Search Result */}
-        <div className="mt-5 flex-1 overflow-y-auto">
+        <div className="mt-5 flex-1 touch-pan-y overflow-y-auto overscroll-contain scroll-pb-6">
           {/* 검색어 없음 */}
           {!keyword.trim() && (
             <div className="flex min-h-[160px] items-center justify-center text-center">

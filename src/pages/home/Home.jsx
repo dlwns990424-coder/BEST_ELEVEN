@@ -35,7 +35,7 @@ export default function Home() {
       {/* =========================
           로그인 / 회원가입 / 로그아웃
       ========================= */}
-      <header className="flex w-full justify-end px-5 pt-[30px]">
+      <header className="home-safe-header flex w-full justify-end">
         {currentUser ? (
           <button
             type="button"
@@ -93,7 +93,8 @@ export default function Home() {
         type="button"
         onClick={handleMakeTeam}
         className="
-          absolute bottom-[160px] left-5 right-5
+          home-primary-action
+          absolute
           flex h-[53px] items-center justify-center
           rounded-lg
           bg-[#B9E000]
@@ -122,7 +123,8 @@ export default function Home() {
           type="button"
           onClick={handleMyTeam}
           className="
-            absolute bottom-[77px] left-5 right-5
+            home-secondary-action
+            absolute
             flex h-[53px] items-center justify-center
             rounded-lg
             border border-[#B9E000]

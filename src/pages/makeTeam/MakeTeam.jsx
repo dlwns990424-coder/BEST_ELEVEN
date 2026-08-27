@@ -74,6 +74,76 @@ const DEFAULT_TEAM_SNAPSHOT = createTeamSnapshot({
   placedPlayers: {},
 });
 
+// =========================
+// 포메이션 변경 시 선수 재배치
+// =========================
+
+function remapPlacedPlayersForFormation({
+  currentFormation,
+  nextFormation,
+  placedPlayers,
+}) {
+  const currentSlots = FORMATIONS[currentFormation] ?? [];
+  const nextSlots = FORMATIONS[nextFormation] ?? [];
+
+  const nextPlacedPlayers = {};
+
+  const assignedPlayerIds = new Set();
+
+  // =========================
+  // 1. 같은 슬롯 ID 유지
+  // =========================
+
+  nextSlots.forEach((nextSlot) => {
+    const player = placedPlayers[nextSlot.id];
+
+    if (!player) {
+      return;
+    }
+
+    nextPlacedPlayers[nextSlot.id] = player;
+
+    assignedPlayerIds.add(player.pid);
+  });
+
+  // =========================
+  // 아직 배치되지 않은 선수
+  // =========================
+
+  const remainingPlayers = currentSlots
+    .map((slot) => ({
+      player: placedPlayers[slot.id],
+      type: slot.type,
+    }))
+    .filter(({ player }) => player && !assignedPlayerIds.has(player.pid));
+
+  // =========================
+  // 2. 같은 라인 우선 재배치
+  // =========================
+
+  nextSlots.forEach((nextSlot) => {
+    if (nextPlacedPlayers[nextSlot.id]) {
+      return;
+    }
+
+    if (remainingPlayers.length === 0) {
+      return;
+    }
+
+    const sameTypeIndex = remainingPlayers.findIndex(
+      ({ type }) => type === nextSlot.type,
+    );
+
+    const playerIndex = sameTypeIndex !== -1 ? sameTypeIndex : 0;
+
+    const [{ player }] = remainingPlayers.splice(playerIndex, 1);
+
+    nextPlacedPlayers[nextSlot.id] = player;
+  });
+
+  return nextPlacedPlayers;
+}
+
 export default function MakeTeam() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -368,7 +438,6 @@ export default function MakeTeam() {
         ? `/make-team/${routeTeamId || teamId}`
         : "/make-team";
 
-    // 현재 MakeTeam 작업 상태 임시 저장
     saveTempTeamDraft({
       teamId,
 
@@ -380,8 +449,6 @@ export default function MakeTeam() {
 
       placedPlayers,
 
-      // 로그인 후 돌아왔을 때
-      // 저장 전 변경사항 여부도 유지
       savedSnapshot: savedSnapshotRef.current,
 
       returnPath,
@@ -389,7 +456,9 @@ export default function MakeTeam() {
 
     setIsLoginModalOpen(false);
 
-    navigate("/login");
+    navigate("/login", {
+      replace: true,
+    });
   };
 
   // =========================
@@ -409,10 +478,15 @@ export default function MakeTeam() {
       return;
     }
 
+    const nextPlacedPlayers = remapPlacedPlayersForFormation({
+      currentFormation: formation,
+      nextFormation: newFormation,
+      placedPlayers,
+    });
+
     setFormation(newFormation);
 
-    // 기존 경기장 배치 초기화
-    setPlacedPlayers({});
+    setPlacedPlayers(nextPlacedPlayers);
 
     setIsCandidateEditMode(false);
     setSelectedCandidateIds([]);
@@ -876,7 +950,7 @@ export default function MakeTeam() {
             </button>
 
             <p className="text-center text-[16px] text-white">
-              팀을 저장하려면 로그인이 필요합니다.
+              팀을 저장하려면 로그인 해주세요
             </p>
 
             <button

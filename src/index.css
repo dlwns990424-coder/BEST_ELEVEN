@@ -3,6 +3,8 @@
 
 * {
   box-sizing: border-box;
+
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -14,12 +16,21 @@ body,
 
 html {
   background: #333333;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
+
+  overflow-x: hidden;
+
+  overscroll-behavior-x: none;
+
   background: #333333;
   color: #ffffff;
+
   font-family:
     "Pretendard",
     -apple-system,
@@ -38,7 +49,78 @@ textarea {
 button {
   cursor: pointer;
 }
-/* 로그인 / 회원가입 자동완성 스타일 */
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* =========================
+   iPhone Safe Area
+========================= */
+
+/* 공통 Header */
+.mobile-safe-header {
+  height: calc(56px + env(safe-area-inset-top, 0px));
+
+  padding-top: env(safe-area-inset-top, 0px);
+
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+/* Home 상단 영역 */
+.home-safe-header {
+  padding-top: calc(30px + env(safe-area-inset-top, 0px));
+
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+/* Home 팀 생성 버튼 */
+.home-primary-action {
+  left: max(20px, env(safe-area-inset-left, 0px));
+
+  right: max(20px, env(safe-area-inset-right, 0px));
+
+  bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Home 내가 만든 팀 버튼 */
+.home-secondary-action {
+  left: max(20px, env(safe-area-inset-left, 0px));
+
+  right: max(20px, env(safe-area-inset-right, 0px));
+
+  bottom: calc(77px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 로그인 / 회원가입 */
+.auth-safe-container {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+}
+
+/* 선수 검색 Bottom Sheet */
+.bottom-sheet-safe {
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+}
+
+/* =========================
+   로그인 / 회원가입 자동완성
+========================= */
+
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus,
@@ -46,6 +128,7 @@ button {
   -webkit-text-fill-color: #ffffff !important;
 
   -webkit-box-shadow: 0 0 0 1000px #585353 inset !important;
+
   box-shadow: 0 0 0 1000px #585353 inset !important;
 
   caret-color: #ffffff;

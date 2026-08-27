@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
+
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+
 import { Link, useNavigate } from "react-router-dom";
 
 import Toast from "../../components/common/Toast";
+
 import { signUpUser } from "../../lib/authStorage";
 
 import logo from "../../../img/LOGO.png";
@@ -11,8 +14,11 @@ export default function SignUp() {
   const navigate = useNavigate();
 
   const [nickname, setNickname] = useState("");
+
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
+
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -21,6 +27,7 @@ export default function SignUp() {
     useState(false);
 
   const [toastMessage, setToastMessage] = useState("");
+
   const [isToastOpen, setIsToastOpen] = useState(false);
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -53,11 +60,13 @@ export default function SignUp() {
 
     if (!nickname.trim()) {
       showToast("닉네임을 입력해주세요.");
+
       return;
     }
 
     if (password !== passwordConfirm) {
       showToast("비밀번호가 일치하지 않습니다.");
+
       return;
     }
 
@@ -65,6 +74,7 @@ export default function SignUp() {
 
     if (!result.success) {
       showToast(result.message);
+
       return;
     }
 
@@ -82,6 +92,7 @@ export default function SignUp() {
 
   const handleSuccessConfirm = () => {
     setIsSuccessModalOpen(false);
+
     navigate("/login");
   };
 
@@ -89,7 +100,7 @@ export default function SignUp() {
     <main className="min-h-dvh w-full bg-[#333333] text-white">
       <Toast message={toastMessage} isOpen={isToastOpen} />
 
-      <div className="min-h-dvh w-full px-[18px] pt-4">
+      <div className="auth-safe-container min-h-dvh w-full">
         {/* 헤더 */}
         <header className="flex h-8 items-center">
           <button
@@ -134,7 +145,7 @@ export default function SignUp() {
                 required
                 autoComplete="nickname"
                 placeholder="닉네임을 입력하세요"
-                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
               />
             </div>
 
@@ -155,7 +166,7 @@ export default function SignUp() {
                 required
                 autoComplete="email"
                 placeholder="이메일을 입력하세요"
-                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
               />
             </div>
 
@@ -177,7 +188,7 @@ export default function SignUp() {
                   required
                   autoComplete="new-password"
                   placeholder="비밀번호를 입력하세요"
-                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
                 />
 
                 <button
@@ -215,7 +226,7 @@ export default function SignUp() {
                   required
                   autoComplete="new-password"
                   placeholder="비밀번호를 입력하세요"
-                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
                 />
 
                 <button

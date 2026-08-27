@@ -1,10 +1,13 @@
 import { useRef, useState } from "react";
+
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+
 import { Link, useNavigate } from "react-router-dom";
 
 import Toast from "../../components/common/Toast";
 
 import { loginUser } from "../../lib/authStorage";
+
 import { getTempTeamDraft } from "../../lib/teamStorage";
 
 import logo from "../../../img/LOGO.png";
@@ -13,11 +16,13 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const [toastMessage, setToastMessage] = useState("");
+
   const [isToastOpen, setIsToastOpen] = useState(false);
 
   const toastTimerRef = useRef(null);
@@ -82,7 +87,7 @@ export default function Login() {
     <main className="min-h-dvh w-full bg-[#333333] text-white">
       <Toast message={toastMessage} isOpen={isToastOpen} />
 
-      <div className="min-h-dvh w-full px-[18px] pt-4">
+      <div className="auth-safe-container min-h-dvh w-full">
         {/* 헤더 */}
         <header className="flex h-8 items-center">
           <button
@@ -127,7 +132,7 @@ export default function Login() {
                 required
                 autoComplete="email"
                 placeholder="이메일을 입력하세요"
-                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
               />
             </div>
 
@@ -149,7 +154,7 @@ export default function Login() {
                   required
                   autoComplete="current-password"
                   placeholder="비밀번호를 입력하세요"
-                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[14px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
+                  className="auth-input h-[58px] w-full rounded-lg bg-[#585353] px-3 pr-11 text-[16px] font-normal text-white outline-none placeholder:font-light placeholder:text-white/30 focus:ring-1 focus:ring-[#B9E000]"
                 />
 
                 <button

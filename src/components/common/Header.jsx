@@ -2,7 +2,7 @@ import { ChevronLeft } from "lucide-react";
 
 export default function Header({ title, rightAction, onBack }) {
   return (
-    <header className="relative flex h-14 items-center justify-between px-5">
+    <header className="mobile-safe-header relative flex items-center justify-between">
       <button
         type="button"
         aria-label="뒤로가기"
@@ -12,7 +12,7 @@ export default function Header({ title, rightAction, onBack }) {
         <ChevronLeft size={24} />
       </button>
 
-      <h1 className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[16px] ">
+      <h1 className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[16px]">
         {title}
       </h1>
 
