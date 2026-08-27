@@ -16,16 +16,16 @@ Please change the parent <Route path="${e}"> to <Route path="${e===`/`?`*`:`${e}
                 text-[#B9E000]\r
                 transition-all\r
                 active:scale-95\r
-              `,children:`회원가입`})]})}),(0,N.jsxs)(`section`,{className:`mt-[100px] flex w-full flex-col items-center px-5`,children:[(0,N.jsx)(`img`,{src:pr,alt:`BEST ELEVEN`,draggable:!1,className:`h-[100px] w-[300px] object-contain`}),(0,N.jsxs)(`h1`,{className:`mt-[30px] text-center text-[24px] font-bold leading-[50px]`,children:[`원하는 선수들을 선택하고`,(0,N.jsx)(`br`,{}),`나만의 팀을 만들어 보세요`]})]}),(0,N.jsxs)(`button`,{type:`button`,onClick:()=>{e(`/make-team`)},className:`\r
-          home-primary-action\r
-          absolute\r
-          flex h-[53px] items-center justify-center\r
-          rounded-lg\r
-          bg-[#B9E000]\r
-          text-[16px] font-bold text-[#222222]\r
-          transition-all\r
-          active:scale-[0.98]\r
-          active:bg-[#9FBE00]\r
+              `,children:`회원가입`})]})}),(0,N.jsxs)(`section`,{className:`mt-[100px] flex w-full flex-col items-center px-5`,children:[(0,N.jsx)(`img`,{src:pr,alt:`BEST ELEVEN`,draggable:!1,className:`h-[100px] w-[300px] object-contain`}),(0,N.jsxs)(`h1`,{className:`mt-[30px] text-center text-[24px] font-bold leading-[50px]`,children:[`원하는 선수들을 선택하고`,(0,N.jsx)(`br`,{}),`나만의 팀을 만들어 보세요`]})]}),(0,N.jsxs)(`button`,{type:`button`,onClick:()=>{e(`/make-team`)},className:`
+          ${t?`home-primary-action`:`home-primary-action-guest`}
+          absolute
+          flex h-[53px] items-center justify-center
+          rounded-lg
+          bg-[#B9E000]
+          text-[16px] font-bold text-[#222222]
+          transition-all
+          active:scale-[0.98]
+          active:bg-[#9FBE00]
         `,children:[(0,N.jsx)(`span`,{children:`팀 생성하기`}),t&&(0,N.jsx)(Xn,{size:20,strokeWidth:2,className:`absolute right-4`})]}),t&&(0,N.jsxs)(`button`,{type:`button`,onClick:()=>{e(`/my-team`)},className:`\r
             home-secondary-action\r
             absolute\r
