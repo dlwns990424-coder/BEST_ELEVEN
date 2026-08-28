@@ -90,10 +90,6 @@ function remapPlacedPlayersForFormation({
 
   const assignedPlayerIds = new Set();
 
-  // =========================
-  // 1. 같은 슬롯 ID 유지
-  // =========================
-
   nextSlots.forEach((nextSlot) => {
     const player = placedPlayers[nextSlot.id];
 
@@ -106,20 +102,12 @@ function remapPlacedPlayersForFormation({
     assignedPlayerIds.add(player.pid);
   });
 
-  // =========================
-  // 아직 배치되지 않은 선수
-  // =========================
-
   const remainingPlayers = currentSlots
     .map((slot) => ({
       player: placedPlayers[slot.id],
       type: slot.type,
     }))
     .filter(({ player }) => player && !assignedPlayerIds.has(player.pid));
-
-  // =========================
-  // 2. 같은 라인 우선 재배치
-  // =========================
 
   nextSlots.forEach((nextSlot) => {
     if (nextPlacedPlayers[nextSlot.id]) {
@@ -179,8 +167,14 @@ export default function MakeTeam() {
   // 뒤로가기 확인 모달
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
+  // 전체 선수 삭제 확인 모달
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+
   // 마지막으로 저장된 상태
   const savedSnapshotRef = useRef(DEFAULT_TEAM_SNAPSHOT);
+
+  // 후보 선수 영역
+  const candidateSectionRef = useRef(null);
 
   // 토스트
   const [toastMessage, setToastMessage] = useState("");
@@ -197,7 +191,7 @@ export default function MakeTeam() {
 
   const touchSensor = useSensor(TouchSensor, {
     activationConstraint: {
-      delay: 180,
+      delay: 120,
       tolerance: 8,
     },
   });
@@ -224,7 +218,6 @@ export default function MakeTeam() {
   // =========================
 
   useEffect(() => {
-    // 로그인 후 MakeTeam으로 돌아온 경우
     if (location.state?.restoreDraft) {
       const tempDraft = getTempTeamDraft();
 
@@ -245,11 +238,8 @@ export default function MakeTeam() {
         setTeamId(tempDraft.teamId ?? routeTeamId ?? null);
 
         setTeamName(draftTeamName);
-
         setFormation(draftFormation);
-
         setCandidatePlayers(draftCandidatePlayers);
-
         setPlacedPlayers(draftPlacedPlayers);
 
         savedSnapshotRef.current =
@@ -264,7 +254,6 @@ export default function MakeTeam() {
       }
     }
 
-    // 새 팀 생성
     if (!routeTeamId) {
       savedSnapshotRef.current = DEFAULT_TEAM_SNAPSHOT;
 
@@ -283,7 +272,6 @@ export default function MakeTeam() {
 
     const savedTeam = getTeamById(routeTeamId);
 
-    // 존재하지 않는 팀
     if (!savedTeam) {
       navigate("/my-team", {
         replace: true,
@@ -292,7 +280,6 @@ export default function MakeTeam() {
       return;
     }
 
-    // 다른 사용자의 팀 접근 방지
     if (savedTeam.userId !== currentUser.id) {
       navigate("/my-team", {
         replace: true,
@@ -315,13 +302,9 @@ export default function MakeTeam() {
         : {};
 
     setTeamId(savedTeam.id);
-
     setTeamName(savedTeamName);
-
     setFormation(savedFormation);
-
     setCandidatePlayers(savedCandidatePlayers);
-
     setPlacedPlayers(savedPlacedPlayers);
 
     savedSnapshotRef.current = createTeamSnapshot({
@@ -385,7 +368,6 @@ export default function MakeTeam() {
   const handleSaveTeam = () => {
     const currentUser = getCurrentUser();
 
-    // 비로그인
     if (!currentUser) {
       setIsLoginModalOpen(true);
 
@@ -394,24 +376,17 @@ export default function MakeTeam() {
 
     const savedTeam = saveTeam({
       id: teamId,
-
       userId: currentUser.id,
-
       teamName,
-
       formation,
-
       candidatePlayers,
-
       placedPlayers,
     });
 
-    // 저장 시점 상태를 기준 상태로 변경
     savedSnapshotRef.current = currentSnapshot;
 
     const isNewTeam = !teamId || savedTeam.id !== teamId;
 
-    // 새로운 팀
     if (isNewTeam) {
       setTeamId(savedTeam.id);
 
@@ -424,7 +399,6 @@ export default function MakeTeam() {
       return;
     }
 
-    // 기존 팀 수정
     showToast("팀이 수정되었습니다.");
   };
 
@@ -440,17 +414,11 @@ export default function MakeTeam() {
 
     saveTempTeamDraft({
       teamId,
-
       teamName,
-
       formation,
-
       candidatePlayers,
-
       placedPlayers,
-
       savedSnapshot: savedSnapshotRef.current,
-
       returnPath,
     });
 
@@ -485,11 +453,22 @@ export default function MakeTeam() {
     });
 
     setFormation(newFormation);
-
     setPlacedPlayers(nextPlacedPlayers);
 
     setIsCandidateEditMode(false);
     setSelectedCandidateIds([]);
+  };
+
+  // =========================
+  // 포메이션 배치 초기화
+  // =========================
+
+  const handleResetPlacement = () => {
+    if (Object.keys(placedPlayers).length === 0) {
+      return;
+    }
+
+    setPlacedPlayers({});
   };
 
   // =========================
@@ -533,7 +512,6 @@ export default function MakeTeam() {
       ...prevPlayers,
       {
         ...player,
-
         addedAt: Date.now(),
       },
     ]);
@@ -581,7 +559,6 @@ export default function MakeTeam() {
 
   const handleCandidateEditComplete = () => {
     setIsCandidateEditMode(false);
-
     setSelectedCandidateIds([]);
   };
 
@@ -623,7 +600,6 @@ export default function MakeTeam() {
     );
 
     setCandidatePlayers(remainingPlayers);
-
     setSelectedCandidateIds([]);
 
     const remainingVisiblePlayers = visibleCandidatePlayers.filter(
@@ -633,6 +609,35 @@ export default function MakeTeam() {
     if (remainingVisiblePlayers.length === 0) {
       setIsCandidateEditMode(false);
     }
+  };
+
+  // =========================
+  // 전체 선수 삭제
+  // =========================
+
+  const handleDeleteAllRequest = () => {
+    if (
+      candidatePlayers.length === 0 &&
+      Object.keys(placedPlayers).length === 0
+    ) {
+      return;
+    }
+
+    setIsDeleteAllModalOpen(true);
+  };
+
+  const handleDeleteAllConfirm = () => {
+    setCandidatePlayers([]);
+    setPlacedPlayers({});
+
+    setSelectedCandidateIds([]);
+    setIsCandidateEditMode(false);
+
+    setActiveDrag(null);
+
+    setIsDeleteAllModalOpen(false);
+
+    showToast("모든 선수가 삭제되었습니다.");
   };
 
   // =========================
@@ -660,6 +665,11 @@ export default function MakeTeam() {
 
   const handleRandomPlace = () => {
     if (candidatePlayers.length === 0) {
+      candidateSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
       showToast("배치할 선수를 먼저 추가해주세요.");
 
       return;
@@ -686,7 +696,6 @@ export default function MakeTeam() {
     setPlacedPlayers(nextPlacedPlayers);
 
     setIsCandidateEditMode(false);
-
     setSelectedCandidateIds([]);
   };
 
@@ -720,7 +729,6 @@ export default function MakeTeam() {
     if (!over) return;
 
     const activeData = active.data.current;
-
     const overData = over.data.current;
 
     if (!activeData || !overData) {
@@ -827,6 +835,10 @@ export default function MakeTeam() {
     }
   };
 
+  const hasPlacedPlayers = Object.keys(placedPlayers).length > 0;
+
+  const hasAnyPlayers = candidatePlayers.length > 0 || hasPlacedPlayers;
+
   return (
     <DndContext
       sensors={sensors}
@@ -864,6 +876,8 @@ export default function MakeTeam() {
               formation={formation}
               onFormationChange={handleFormationChange}
               onRandomPlace={handleRandomPlace}
+              onResetPlacement={handleResetPlacement}
+              hasPlacedPlayers={hasPlacedPlayers}
             />
 
             <FormationField
@@ -872,19 +886,23 @@ export default function MakeTeam() {
             />
           </div>
 
-          <CandidatePlayers
-            players={visibleCandidatePlayers}
-            onOpenPlayerSheet={openPlayerSheet}
-            sortType={candidateSortType}
-            onSortChange={setCandidateSortType}
-            isEditMode={isCandidateEditMode}
-            selectedCandidateIds={selectedCandidateIds}
-            onEditStart={handleCandidateEditStart}
-            onEditComplete={handleCandidateEditComplete}
-            onToggleSelect={handleToggleCandidate}
-            onSelectAll={handleSelectAllCandidates}
-            onSelectedDelete={handleSelectedCandidateDelete}
-          />
+          <div ref={candidateSectionRef} className="scroll-mt-[70px]">
+            <CandidatePlayers
+              players={visibleCandidatePlayers}
+              hasAnyPlayers={hasAnyPlayers}
+              onOpenPlayerSheet={openPlayerSheet}
+              sortType={candidateSortType}
+              onSortChange={setCandidateSortType}
+              isEditMode={isCandidateEditMode}
+              selectedCandidateIds={selectedCandidateIds}
+              onEditStart={handleCandidateEditStart}
+              onEditComplete={handleCandidateEditComplete}
+              onToggleSelect={handleToggleCandidate}
+              onSelectAll={handleSelectAllCandidates}
+              onSelectedDelete={handleSelectedCandidateDelete}
+              onDeleteAll={handleDeleteAllRequest}
+            />
+          </div>
         </div>
 
         <PlayerAddSheet
@@ -933,6 +951,43 @@ export default function MakeTeam() {
           )
         ) : null}
       </DragOverlay>
+
+      {/* =========================
+          전체 선수 삭제 확인 모달
+      ========================= */}
+      {isDeleteAllModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-[350px] rounded-xl bg-[#333333] px-5 py-6 shadow-2xl">
+            <h2 className="text-center text-[18px] font-semibold text-white">
+              모든 선수를 삭제하시겠습니까?
+            </h2>
+
+            <p className="mt-3 text-center text-[14px] leading-6 text-white/60">
+              경기장에 배치된 선수와
+              <br />
+              후보 선수가 모두 삭제됩니다.
+            </p>
+
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllModalOpen(false)}
+                className="h-[50px] flex-1 rounded-lg bg-[#585353] text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteAllConfirm}
+                className="h-[50px] flex-1 rounded-lg bg-red-500 text-[15px] font-semibold text-white transition-all active:scale-[0.98] active:bg-red-600"
+              >
+                전체 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =========================
           로그인 필요 모달

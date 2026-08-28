@@ -89,15 +89,15 @@ export default function TeamName({ teamName, onChangeTeamName }) {
   return (
     <section>
       {!isEditMode ? (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start">
           <h2 className="text-[20px] font-semibold">{teamName}</h2>
 
           <button
             type="button"
             onClick={handleEditStart}
-            className="flex items-center gap-1 !text-[14px] text-white/50"
+            className="mt-2 flex items-center gap-2 !text-[15px] text-white/50"
           >
-            <Pencil size={13} />
+            <Pencil size={14} strokeWidth={1.8} />
             수정
           </button>
         </div>

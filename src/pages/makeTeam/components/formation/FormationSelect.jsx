@@ -7,6 +7,8 @@ export default function FormationSelect({
   formation,
   onFormationChange,
   onRandomPlace,
+  onResetPlacement,
+  hasPlacedPlayers,
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -50,13 +52,13 @@ export default function FormationSelect({
     <section className="mt-6">
       <p className="mb-2 text-[14px] font-normal">FORMATION</p>
 
-      <div className="flex items-center justify-between">
-        <div ref={formationRef} className="relative">
+      <div className="flex items-center justify-between gap-2">
+        <div ref={formationRef} className="relative shrink-0">
           <button
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}
             aria-expanded={isOpen}
-            className="flex h-10 w-[145px] items-center justify-between rounded-lg bg-[#585353] px-4"
+            className="flex h-10 w-[150px] items-center justify-between rounded-lg bg-[#585353] px-4"
           >
             <span className="text-[14px]">{formationText}</span>
 
@@ -69,7 +71,7 @@ export default function FormationSelect({
           </button>
 
           {isOpen && (
-            <div className="absolute left-0 top-[48px] z-50 w-[145px] overflow-hidden rounded-lg bg-[#1A1A1A] shadow-xl ring-1 ring-white/10">
+            <div className="absolute left-0 top-[48px] z-50 w-[150px] overflow-hidden rounded-lg bg-[#1A1A1A] shadow-xl ring-1 ring-white/10">
               {formationOptions.map((option) => {
                 const isSelected = formation === option;
 
@@ -78,7 +80,7 @@ export default function FormationSelect({
                     key={option}
                     type="button"
                     onClick={() => handleFormationSelect(option)}
-                    className={`flex h-10 w-full items-center justify-between px-4 text-left text-[14px] transition-colors ${
+                    className={`flex h-10 w-full items-center justify-between px-4 text-left !text-[14px] transition-colors ${
                       isSelected
                         ? "bg-[#B9E000]/10 text-[#B9E000]"
                         : "text-white hover:bg-white/5"
@@ -94,13 +96,28 @@ export default function FormationSelect({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={onRandomPlace}
-          className="h-10 rounded-lg bg-[#B9E000] px-4 text-[14px] text-[#333333] transition-all duration-150 active:scale-95 active:bg-[#9FBE00]"
-        >
-          랜덤 배치
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onRandomPlace}
+            className="h-10 whitespace-nowrap rounded-lg bg-[#B9E000] px-3 text-[14px] text-[#333333] transition-all duration-150 active:scale-95 active:bg-[#9FBE00]"
+          >
+            랜덤 배치
+          </button>
+
+          <button
+            type="button"
+            onClick={onResetPlacement}
+            disabled={!hasPlacedPlayers}
+            className={`h-10 whitespace-nowrap rounded-lg px-3 text-[14px] transition-all duration-150 ${
+              hasPlacedPlayers
+                ? "bg-[#585353] text-white active:scale-95 active:bg-[#4A4646]"
+                : "cursor-default bg-[#585353]/40 text-white/20"
+            }`}
+          >
+            초기화
+          </button>
+        </div>
       </div>
     </section>
   );

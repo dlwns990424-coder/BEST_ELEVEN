@@ -1,4 +1,4 @@
-import { ChevronDown, Check, Plus } from "lucide-react";
+import { Check, ChevronDown, LayoutGrid, List, Plus } from "lucide-react";
 import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 
@@ -21,6 +21,7 @@ const SORT_OPTIONS = [
 
 export default function CandidatePlayers({
   players,
+  hasAnyPlayers,
   onOpenPlayerSheet,
 
   sortType,
@@ -34,8 +35,12 @@ export default function CandidatePlayers({
   onToggleSelect,
   onSelectAll,
   onSelectedDelete,
+  onDeleteAll,
 }) {
   const [isSortOpen, setIsSortOpen] = useState(false);
+
+  // 후보 선수 보기 방식
+  const [viewType, setViewType] = useState("horizontal");
 
   const { setNodeRef, isOver } = useDroppable({
     id: "candidate-area",
@@ -45,6 +50,8 @@ export default function CandidatePlayers({
   });
 
   const hasPlayers = players.length > 0;
+
+  const isGridView = viewType === "grid";
 
   const isAllSelected =
     hasPlayers &&
@@ -56,6 +63,12 @@ export default function CandidatePlayers({
   const handleSortChange = (value) => {
     onSortChange(value);
     setIsSortOpen(false);
+  };
+
+  const handleViewChange = () => {
+    setViewType((prevViewType) =>
+      prevViewType === "horizontal" ? "grid" : "horizontal",
+    );
   };
 
   return (
@@ -79,50 +92,86 @@ export default function CandidatePlayers({
         </button>
       </div>
 
-      {/* 정렬 / 편집 */}
-      {hasPlayers && !isEditMode && (
-        <div className="mt-3 flex items-center justify-end gap-6">
-          <button
-            type="button"
-            onClick={onEditStart}
-            className="!text-[14px] text-white/50"
-          >
-            편집
-          </button>
+      {/* 보기 방식 / 정렬 / 편집 / 전체 삭제 */}
+      {hasAnyPlayers && !isEditMode && (
+        <div className="mt-3 flex items-center justify-between">
+          {/* 좌측 - 보기 방식 변경 */}
+          <div>
+            {hasPlayers && (
+              <button
+                type="button"
+                onClick={handleViewChange}
+                aria-label={
+                  isGridView ? "가로 보기로 변경" : "그리드 보기로 변경"
+                }
+                title={isGridView ? "가로 보기" : "그리드 보기"}
+                className="flex h-8 w-8 items-center justify-start text-white/50 transition-colors active:text-white"
+              >
+                {isGridView ? (
+                  <List size={19} strokeWidth={1.8} />
+                ) : (
+                  <LayoutGrid size={19} strokeWidth={1.8} />
+                )}
+              </button>
+            )}
+          </div>
 
-          <div className="relative">
+          {/* 우측 - 전체 삭제 / 편집 / 정렬 */}
+          <div className="flex items-center gap-6">
             <button
               type="button"
-              onClick={() => setIsSortOpen((prev) => !prev)}
-              className="flex items-center gap-1 !text-[14px] text-white/50"
+              onClick={onDeleteAll}
+              className="!text-[14px] text-red-400/80 transition-colors active:text-red-400"
             >
-              {currentSortLabel}
-
-              <ChevronDown
-                size={14}
-                className={`transition-transform duration-200 ${
-                  isSortOpen ? "rotate-180" : ""
-                }`}
-              />
+              전체 삭제
             </button>
 
-            {isSortOpen && (
-              <div className="absolute right-0 top-[26px] z-20 min-w-[150px] overflow-hidden rounded-lg bg-[#333333] py-1 shadow-lg">
-                {SORT_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleSortChange(option.value)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] text-white/70 hover:bg-white/5"
-                  >
-                    {option.label}
+            {hasPlayers && (
+              <>
+                <button
+                  type="button"
+                  onClick={onEditStart}
+                  className="!text-[14px] text-white/50"
+                >
+                  편집
+                </button>
 
-                    {sortType === option.value && (
-                      <Check size={13} className="text-[#B9E000]" />
-                    )}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsSortOpen((prev) => !prev)}
+                    className="flex items-center gap-1 !text-[14px] text-white/50"
+                  >
+                    {currentSortLabel}
+
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${
+                        isSortOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                ))}
-              </div>
+
+                  {isSortOpen && (
+                    <div className="absolute right-0 top-[26px] z-20 min-w-[150px] overflow-hidden rounded-lg bg-[#333333] py-1 shadow-lg">
+                      {SORT_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleSortChange(option.value)}
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] text-white/70 hover:bg-white/5"
+                        >
+                          {option.label}
+
+                          {sortType === option.value && (
+                            <Check size={13} className="text-[#B9E000]" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -171,7 +220,21 @@ export default function CandidatePlayers({
             선수 추가로 원하는 선수를 등록해보세요
           </p>
         </div>
+      ) : isGridView ? (
+        /* Grid 보기 */
+        <div className="mt-3 grid grid-cols-3 justify-items-center gap-x-2 gap-y-3">
+          {players.map((player) => (
+            <CandidateCard
+              key={player.pid}
+              player={player}
+              isEditMode={isEditMode}
+              isSelected={selectedCandidateIds.includes(player.pid)}
+              onToggleSelect={onToggleSelect}
+            />
+          ))}
+        </div>
       ) : (
+        /* 가로 보기 */
         <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
           {players.map((player) => (
             <CandidateCard
