@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Search, X } from "lucide-react";
 
@@ -12,8 +12,14 @@ export default function PlayerAddSheet({
   isOpen,
   onClose,
   candidatePlayers,
+  availableCandidatePlayers,
   onAddPlayer,
+  onPlaceCandidatePlayer,
+  isDirectPlacement,
 }) {
+  const [activeTab, setActiveTab] = useState("search");
+
+  // API 선수 검색
   const [keyword, setKeyword] = useState("");
 
   const [players, setPlayers] = useState([]);
@@ -23,6 +29,9 @@ export default function PlayerAddSheet({
   const [isLoading, setIsLoading] = useState(false);
 
   const [error, setError] = useState("");
+
+  // 후보 선수 검색
+  const [candidateKeyword, setCandidateKeyword] = useState("");
 
   // =========================
   // Bottom Sheet 열림
@@ -37,21 +46,14 @@ export default function PlayerAddSheet({
     const scrollY = window.scrollY;
 
     const originalPosition = document.body.style.position;
-
     const originalTop = document.body.style.top;
-
     const originalLeft = document.body.style.left;
-
     const originalRight = document.body.style.right;
-
     const originalWidth = document.body.style.width;
-
     const originalOverflow = document.body.style.overflow;
 
     document.body.style.position = "fixed";
-
     document.body.style.top = `-${scrollY}px`;
-
     document.body.style.left = "0";
     document.body.style.right = "0";
     document.body.style.width = "100%";
@@ -59,15 +61,10 @@ export default function PlayerAddSheet({
 
     return () => {
       document.body.style.position = originalPosition;
-
       document.body.style.top = originalTop;
-
       document.body.style.left = originalLeft;
-
       document.body.style.right = originalRight;
-
       document.body.style.width = originalWidth;
-
       document.body.style.overflow = originalOverflow;
 
       window.scrollTo(0, scrollY);
@@ -75,13 +72,43 @@ export default function PlayerAddSheet({
   }, [isOpen]);
 
   // =========================
-  // 선수 검색
+  // 닫혔을 때 검색 상태 초기화
+  // =========================
+
+  useEffect(() => {
+    if (isOpen) {
+      return;
+    }
+
+    setActiveTab("search");
+
+    setKeyword("");
+    setPlayers([]);
+    setVisibleCount(PAGE_SIZE);
+    setIsLoading(false);
+    setError("");
+
+    setCandidateKeyword("");
+  }, [isOpen]);
+
+  // =========================
+  // 일반 선수 추가로 열렸다면
+  // 항상 선수 검색 탭 사용
+  // =========================
+
+  useEffect(() => {
+    if (!isDirectPlacement) {
+      setActiveTab("search");
+    }
+  }, [isDirectPlacement]);
+
+  // =========================
+  // API 선수 검색
   // =========================
 
   useEffect(() => {
     const searchKeyword = keyword.trim();
 
-    // 검색어가 바뀔 때마다 다시 20명부터 표시
     setVisibleCount(PAGE_SIZE);
 
     if (!searchKeyword) {
@@ -101,11 +128,15 @@ export default function PlayerAddSheet({
 
         const result = await searchPlayers(searchKeyword);
 
-        if (isCancelled) return;
+        if (isCancelled) {
+          return;
+        }
 
         setPlayers(result);
       } catch (error) {
-        if (isCancelled) return;
+        if (isCancelled) {
+          return;
+        }
 
         console.error("선수 검색 실패:", error);
 
@@ -127,7 +158,7 @@ export default function PlayerAddSheet({
   }, [keyword]);
 
   // =========================
-  // Bottom Sheet 닫기
+  // 닫기
   // =========================
 
   const handleClose = () => {
@@ -137,26 +168,48 @@ export default function PlayerAddSheet({
       activeElement.blur();
     }
 
+    setActiveTab("search");
+
+    setKeyword("");
+    setPlayers([]);
+    setVisibleCount(PAGE_SIZE);
+    setIsLoading(false);
+    setError("");
+
+    setCandidateKeyword("");
+
     onClose();
   };
 
   // =========================
-  // 현재 화면에 보여줄 선수
+  // API 검색 결과
   // =========================
 
   const visiblePlayers = players.slice(0, visibleCount);
 
   const hasMorePlayers = visibleCount < players.length;
 
-  // =========================
-  // 더보기
-  // =========================
-
   const handleLoadMore = () => {
     setVisibleCount((prevCount) =>
       Math.min(prevCount + PAGE_SIZE, players.length),
     );
   };
+
+  // =========================
+  // 후보 선수 검색
+  // =========================
+
+  const filteredCandidatePlayers = useMemo(() => {
+    const searchKeyword = candidateKeyword.trim().toLowerCase();
+
+    if (!searchKeyword) {
+      return availableCandidatePlayers;
+    }
+
+    return availableCandidatePlayers.filter((player) =>
+      player.name.toLowerCase().includes(searchKeyword),
+    );
+  }, [availableCandidatePlayers, candidateKeyword]);
 
   return (
     <div
@@ -185,7 +238,9 @@ export default function PlayerAddSheet({
 
         {/* Header */}
         <div className="mt-5 flex items-center justify-between">
-          <h2 className="text-[20px] font-semibold">선수 추가</h2>
+          <h2 className="text-[20px] font-semibold">
+            {isDirectPlacement ? "선수 배치" : "선수 추가"}
+          </h2>
 
           <button
             type="button"
@@ -197,96 +252,195 @@ export default function PlayerAddSheet({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mt-5">
-          <input
-            type="search"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="선수 이름을 검색해주세요"
-            enterKeyHint="search"
-            autoComplete="off"
-            className="h-12 w-full rounded-lg bg-[#585353] pl-4 pr-12 text-[16px] text-white outline-none placeholder:text-white/40"
-          />
+        {/* =========================
+            포메이션 +에서 들어왔을 때만 탭 표시
+        ========================= */}
+        {isDirectPlacement && (
+          <div className="mt-4 grid grid-cols-2 rounded-lg bg-[#585353] p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("search")}
+              className={`h-10 rounded-md text-[14px] font-medium transition-colors ${
+                activeTab === "search"
+                  ? "bg-[#B9E000] text-[#333333]"
+                  : "text-white/60"
+              }`}
+            >
+              선수 검색
+            </button>
 
-          <Search
-            size={20}
-            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50"
-          />
-        </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("candidate")}
+              className={`h-10 rounded-md text-[14px] font-medium transition-colors ${
+                activeTab === "candidate"
+                  ? "bg-[#B9E000] text-[#333333]"
+                  : "text-white/60"
+              }`}
+            >
+              후보 선수
+            </button>
+          </div>
+        )}
 
-        {/* Search Result */}
-        <div className="mt-5 flex-1 touch-pan-y overflow-y-auto overscroll-contain scroll-pb-6">
-          {/* 검색어 없음 */}
-          {!keyword.trim() && (
-            <div className="flex min-h-[160px] items-center justify-center text-center">
-              <p className="text-[14px] text-white/40">
-                원하는 선수의 이름을 검색해주세요
-              </p>
+        {/* =========================
+            선수 검색 탭
+        ========================= */}
+        {activeTab === "search" && (
+          <>
+            {/* Search */}
+            <div className="relative mt-5">
+              <input
+                type="search"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="선수 이름을 검색해주세요"
+                enterKeyHint="search"
+                autoComplete="off"
+                className="h-12 w-full rounded-lg bg-[#585353] pl-4 pr-12 text-[16px] text-white outline-none placeholder:text-white/40 placeholder:font-light"
+              />
+
+              <Search
+                size={20}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50"
+              />
             </div>
-          )}
 
-          {/* 로딩 */}
-          {keyword.trim() && isLoading && (
-            <div className="flex min-h-[160px] items-center justify-center">
-              <p className="text-[14px] text-white/40">선수 검색 중...</p>
-            </div>
-          )}
-
-          {/* 에러 */}
-          {keyword.trim() && !isLoading && error && (
-            <div className="flex min-h-[160px] items-center justify-center text-center">
-              <p className="text-[14px] text-white/40">{error}</p>
-            </div>
-          )}
-
-          {/* 검색 결과 없음 */}
-          {keyword.trim() && !isLoading && !error && players.length === 0 && (
-            <div className="flex min-h-[160px] items-center justify-center">
-              <p className="text-[14px] text-white/40">
-                검색된 선수가 없습니다.
-              </p>
-            </div>
-          )}
-
-          {/* 검색 결과 */}
-          {keyword.trim() && !isLoading && !error && players.length > 0 && (
-            <>
-              {visiblePlayers.map((player) => {
-                const isAdded = candidatePlayers.some(
-                  (candidate) => candidate.pid === player.pid,
-                );
-
-                return (
-                  <PlayerSearchItem
-                    key={player.pid}
-                    player={player}
-                    isAdded={isAdded}
-                    onAddPlayer={onAddPlayer}
-                  />
-                );
-              })}
-
-              {/* 더보기 */}
-              {hasMorePlayers && (
-                <div className="py-5">
-                  <button
-                    type="button"
-                    onClick={handleLoadMore}
-                    className="h-11 w-full rounded-lg border border-white/15 text-[14px] text-white/70 transition-all duration-150 active:scale-[0.98] active:bg-white/5"
-                  >
-                    더보기
-                  </button>
+            {/* Search Result */}
+            <div className="mt-5 flex-1 touch-pan-y overflow-y-auto overscroll-contain scroll-pb-6">
+              {!keyword.trim() && (
+                <div className="flex min-h-[160px] items-center justify-center text-center">
+                  <p className="text-[14px] text-white/40">
+                    원하는 선수의 이름을 검색해주세요
+                  </p>
                 </div>
               )}
 
-              {/* 결과 개수 */}
-              <p className="pb-2 text-center text-[12px] text-white/30">
-                {visiblePlayers.length} / {players.length}
-              </p>
-            </>
-          )}
-        </div>
+              {keyword.trim() && isLoading && (
+                <div className="flex min-h-[160px] items-center justify-center">
+                  <p className="text-[14px] text-white/40">선수 검색 중...</p>
+                </div>
+              )}
+
+              {keyword.trim() && !isLoading && error && (
+                <div className="flex min-h-[160px] items-center justify-center text-center">
+                  <p className="text-[14px] text-white/40">{error}</p>
+                </div>
+              )}
+
+              {keyword.trim() &&
+                !isLoading &&
+                !error &&
+                players.length === 0 && (
+                  <div className="flex min-h-[160px] items-center justify-center">
+                    <p className="text-[14px] text-white/40">
+                      검색된 선수가 없습니다.
+                    </p>
+                  </div>
+                )}
+
+              {keyword.trim() && !isLoading && !error && players.length > 0 && (
+                <>
+                  {visiblePlayers.map((player) => {
+                    const isAdded = candidatePlayers.some(
+                      (candidate) => candidate.pid === player.pid,
+                    );
+
+                    const buttonText = isAdded
+                      ? "추가됨"
+                      : isDirectPlacement
+                        ? "배치"
+                        : "추가";
+
+                    return (
+                      <PlayerSearchItem
+                        key={player.pid}
+                        player={player}
+                        buttonText={buttonText}
+                        disabled={isAdded}
+                        onAction={onAddPlayer}
+                      />
+                    );
+                  })}
+
+                  {hasMorePlayers && (
+                    <div className="py-5">
+                      <button
+                        type="button"
+                        onClick={handleLoadMore}
+                        className="h-11 w-full rounded-lg border border-white/15 text-[14px] text-white/70 transition-all duration-150 active:scale-[0.98] active:bg-white/5"
+                      >
+                        더보기
+                      </button>
+                    </div>
+                  )}
+
+                  <p className="pb-2 mt-2 text-center text-[12px] text-white/30">
+                    {visiblePlayers.length} / {players.length}
+                  </p>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* =========================
+            후보 선수 탭
+        ========================= */}
+        {isDirectPlacement && activeTab === "candidate" && (
+          <>
+            {/* 후보 검색 */}
+            <div className="relative mt-5">
+              <input
+                type="search"
+                value={candidateKeyword}
+                onChange={(event) => setCandidateKeyword(event.target.value)}
+                placeholder="후보 선수를 검색해주세요"
+                enterKeyHint="search"
+                autoComplete="off"
+                className="h-12 w-full rounded-lg bg-[#585353] pl-4 pr-12 text-[16px] text-white outline-none placeholder:text-white/40 placeholder:font-light"
+              />
+
+              <Search
+                size={20}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50"
+              />
+            </div>
+
+            {/* 후보 목록 */}
+            <div className="mt-5 flex-1 touch-pan-y overflow-y-auto overscroll-contain scroll-pb-6">
+              {availableCandidatePlayers.length === 0 ? (
+                <div className="flex min-h-[160px] items-center justify-center text-center">
+                  <p className="text-[14px] text-white/40">
+                    배치할 수 있는 후보 선수가 없습니다.
+                  </p>
+                </div>
+              ) : filteredCandidatePlayers.length === 0 ? (
+                <div className="flex min-h-[160px] items-center justify-center text-center">
+                  <p className="text-[14px] text-white/40">
+                    검색된 후보 선수가 없습니다.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {filteredCandidatePlayers.map((player) => (
+                    <PlayerSearchItem
+                      key={player.pid}
+                      player={player}
+                      buttonText="배치"
+                      disabled={false}
+                      onAction={onPlaceCandidatePlayer}
+                    />
+                  ))}
+
+                  <p className="pb-2 pt-4 text-center text-[12px] text-white/30">
+                    {filteredCandidatePlayers.length}명
+                  </p>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

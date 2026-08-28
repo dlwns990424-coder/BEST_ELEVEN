@@ -90,6 +90,7 @@ function remapPlacedPlayersForFormation({
 
   const assignedPlayerIds = new Set();
 
+  // 같은 슬롯 ID 유지
   nextSlots.forEach((nextSlot) => {
     const player = placedPlayers[nextSlot.id];
 
@@ -102,6 +103,7 @@ function remapPlacedPlayersForFormation({
     assignedPlayerIds.add(player.pid);
   });
 
+  // 아직 배치되지 않은 선수
   const remainingPlayers = currentSlots
     .map((slot) => ({
       player: placedPlayers[slot.id],
@@ -109,6 +111,7 @@ function remapPlacedPlayersForFormation({
     }))
     .filter(({ player }) => player && !assignedPlayerIds.has(player.pid));
 
+  // 같은 라인 우선 배치
   nextSlots.forEach((nextSlot) => {
     if (nextPlacedPlayers[nextSlot.id]) {
       return;
@@ -140,6 +143,9 @@ export default function MakeTeam() {
 
   const [isPlayerSheetOpen, setIsPlayerSheetOpen] = useState(false);
 
+  // 포메이션 + 버튼으로 열었을 때 대상 슬롯
+  const [targetSlotId, setTargetSlotId] = useState(null);
+
   const [candidatePlayers, setCandidatePlayers] = useState([]);
 
   const [isCandidateEditMode, setIsCandidateEditMode] = useState(false);
@@ -158,19 +164,19 @@ export default function MakeTeam() {
   // 포메이션
   const [formation, setFormation] = useState(DEFAULT_FORMATION);
 
-  // 현재 저장된 팀 ID
+  // 저장된 팀 ID
   const [teamId, setTeamId] = useState(null);
 
   // 로그인 필요 모달
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // 뒤로가기 확인 모달
+  // 나가기 모달
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
-  // 전체 선수 삭제 확인 모달
+  // 전체 선수 삭제 모달
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
 
-  // 마지막으로 저장된 상태
+  // 저장 상태
   const savedSnapshotRef = useRef(DEFAULT_TEAM_SNAPSHOT);
 
   // 후보 선수 영역
@@ -182,6 +188,10 @@ export default function MakeTeam() {
   const [isToastOpen, setIsToastOpen] = useState(false);
 
   const toastTimerRef = useRef(null);
+
+  // =========================
+  // Drag Sensors
+  // =========================
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -214,7 +224,7 @@ export default function MakeTeam() {
   );
 
   // =========================
-  // 저장된 팀 / 로그인 전 임시 팀 불러오기
+  // 저장된 팀 / 임시 팀 불러오기
   // =========================
 
   useEffect(() => {
@@ -254,6 +264,7 @@ export default function MakeTeam() {
       }
     }
 
+    // 새 팀
     if (!routeTeamId) {
       savedSnapshotRef.current = DEFAULT_TEAM_SNAPSHOT;
 
@@ -351,10 +362,6 @@ export default function MakeTeam() {
     navigate(-1);
   };
 
-  // =========================
-  // 저장하지 않고 나가기
-  // =========================
-
   const handleLeaveWithoutSave = () => {
     setIsLeaveModalOpen(false);
 
@@ -403,7 +410,7 @@ export default function MakeTeam() {
   };
 
   // =========================
-  // 로그인 페이지 이동
+  // 로그인
   // =========================
 
   const handleGoLogin = () => {
@@ -460,7 +467,7 @@ export default function MakeTeam() {
   };
 
   // =========================
-  // 포메이션 배치 초기화
+  // 포메이션 초기화
   // =========================
 
   const handleResetPlacement = () => {
@@ -472,33 +479,82 @@ export default function MakeTeam() {
   };
 
   // =========================
-  // 선수 추가 시트
+  // 일반 선수 추가 시트
   // =========================
 
   const openPlayerSheet = () => {
-    if (candidatePlayers.length >= MAX_PLAYERS) {
-      showToast("최대 23명까지 등록할 수 있습니다.");
+    setTargetSlotId(null);
+    setIsPlayerSheetOpen(true);
+  };
 
-      return;
-    }
+  // =========================
+  // 포메이션 + 버튼 선수 배치 시트
+  // =========================
 
+  const openPlayerSheetForSlot = (slotId) => {
+    setTargetSlotId(slotId);
     setIsPlayerSheetOpen(true);
   };
 
   const closePlayerSheet = () => {
     setIsPlayerSheetOpen(false);
+    setTargetSlotId(null);
   };
 
   // =========================
-  // 선수 추가
+  // API 검색 선수 추가 / 직접 배치
   // =========================
 
   const handleAddPlayer = (player) => {
-    const isAlreadyAdded = candidatePlayers.some(
+    const existingPlayer = candidatePlayers.find(
       (candidate) => candidate.pid === player.pid,
     );
 
-    if (isAlreadyAdded) {
+    // 포메이션 +에서 검색한 경우
+    if (targetSlotId) {
+      if (!existingPlayer && candidatePlayers.length >= MAX_PLAYERS) {
+        showToast("최대 23명까지 등록할 수 있습니다.");
+
+        return;
+      }
+
+      const playerToPlace = existingPlayer ?? {
+        ...player,
+        addedAt: Date.now(),
+      };
+
+      // 신규 선수는 후보 목록에도 등록
+      if (!existingPlayer) {
+        setCandidatePlayers((prevPlayers) => [...prevPlayers, playerToPlace]);
+      }
+
+      setPlacedPlayers((prevPlayers) => {
+        const nextPlayers = {
+          ...prevPlayers,
+        };
+
+        // 혹시 이미 다른 슬롯에 있으면 기존 자리 제거
+        const currentSlotId = Object.keys(prevPlayers).find(
+          (slotId) => prevPlayers[slotId]?.pid === player.pid,
+        );
+
+        if (currentSlotId) {
+          delete nextPlayers[currentSlotId];
+        }
+
+        nextPlayers[targetSlotId] = playerToPlace;
+
+        return nextPlayers;
+      });
+
+      setIsPlayerSheetOpen(false);
+      setTargetSlotId(null);
+
+      return;
+    }
+
+    // 일반 선수 추가
+    if (existingPlayer) {
       return;
     }
 
@@ -515,6 +571,38 @@ export default function MakeTeam() {
         addedAt: Date.now(),
       },
     ]);
+  };
+
+  // =========================
+  // 후보 선수 탭에서 바로 배치
+  // =========================
+
+  const handlePlaceCandidatePlayer = (player) => {
+    if (!targetSlotId) {
+      return;
+    }
+
+    setPlacedPlayers((prevPlayers) => {
+      const nextPlayers = {
+        ...prevPlayers,
+      };
+
+      // 안전하게 중복 배치 방지
+      const currentSlotId = Object.keys(prevPlayers).find(
+        (slotId) => prevPlayers[slotId]?.pid === player.pid,
+      );
+
+      if (currentSlotId) {
+        delete nextPlayers[currentSlotId];
+      }
+
+      nextPlayers[targetSlotId] = player;
+
+      return nextPlayers;
+    });
+
+    setIsPlayerSheetOpen(false);
+    setTargetSlotId(null);
   };
 
   // =========================
@@ -536,7 +624,7 @@ export default function MakeTeam() {
   }, [candidatePlayers, candidateSortType]);
 
   // =========================
-  // 경기장 선수 제외
+  // 배치된 선수 후보 목록에서 제외
   // =========================
 
   const visibleCandidatePlayers = useMemo(() => {
@@ -600,6 +688,7 @@ export default function MakeTeam() {
     );
 
     setCandidatePlayers(remainingPlayers);
+
     setSelectedCandidateIds([]);
 
     const remainingVisiblePlayers = visibleCandidatePlayers.filter(
@@ -688,7 +777,9 @@ export default function MakeTeam() {
     slots.forEach((slot, index) => {
       const player = shuffledPlayers[index];
 
-      if (!player) return;
+      if (!player) {
+        return;
+      }
 
       nextPlacedPlayers[slot.id] = player;
     });
@@ -706,7 +797,9 @@ export default function MakeTeam() {
   const handleDragStart = ({ active }) => {
     const dragData = active.data.current;
 
-    if (!dragData) return;
+    if (!dragData) {
+      return;
+    }
 
     setActiveDrag(dragData);
   };
@@ -726,7 +819,9 @@ export default function MakeTeam() {
   const handleDragEnd = ({ active, over }) => {
     setActiveDrag(null);
 
-    if (!over) return;
+    if (!over) {
+      return;
+    }
 
     const activeData = active.data.current;
     const overData = over.data.current;
@@ -735,7 +830,7 @@ export default function MakeTeam() {
       return;
     }
 
-    // 경기장 → 후보 선수 영역
+    // 경기장 → 후보 선수
     if (activeData.source === "slot" && overData.type === "candidate-area") {
       const sourceSlotId = activeData.slotId;
 
@@ -758,7 +853,7 @@ export default function MakeTeam() {
 
     const targetSlotId = overData.slotId;
 
-    // 후보 선수 → 경기장
+    // 후보 → 경기장
     if (activeData.source === "candidate") {
       const draggedPlayer = activeData.player;
 
@@ -839,6 +934,8 @@ export default function MakeTeam() {
 
   const hasAnyPlayers = candidatePlayers.length > 0 || hasPlacedPlayers;
 
+  const isDirectPlacement = Boolean(targetSlotId);
+
   return (
     <DndContext
       sensors={sensors}
@@ -883,6 +980,7 @@ export default function MakeTeam() {
             <FormationField
               formation={formation}
               placedPlayers={placedPlayers}
+              onEmptySlotClick={openPlayerSheetForSlot}
             />
           </div>
 
@@ -909,7 +1007,10 @@ export default function MakeTeam() {
           isOpen={isPlayerSheetOpen}
           onClose={closePlayerSheet}
           candidatePlayers={candidatePlayers}
+          availableCandidatePlayers={visibleCandidatePlayers}
           onAddPlayer={handleAddPlayer}
+          onPlaceCandidatePlayer={handlePlaceCandidatePlayer}
+          isDirectPlacement={isDirectPlacement}
         />
       </main>
 
@@ -953,7 +1054,7 @@ export default function MakeTeam() {
       </DragOverlay>
 
       {/* =========================
-          전체 선수 삭제 확인 모달
+          전체 선수 삭제
       ========================= */}
       {isDeleteAllModalOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
@@ -990,7 +1091,7 @@ export default function MakeTeam() {
       )}
 
       {/* =========================
-          로그인 필요 모달
+          로그인 필요
       ========================= */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">
@@ -1020,7 +1121,7 @@ export default function MakeTeam() {
       )}
 
       {/* =========================
-          저장하지 않고 나가기 모달
+          저장하지 않고 나가기
       ========================= */}
       {isLeaveModalOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-5">

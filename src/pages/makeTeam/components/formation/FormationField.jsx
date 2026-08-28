@@ -4,7 +4,11 @@ import { FORMATIONS } from "../../../../data/formations";
 
 import PlayerSlot from "./PlayerSlot";
 
-export default function FormationField({ formation, placedPlayers }) {
+export default function FormationField({
+  formation,
+  placedPlayers,
+  onEmptySlotClick,
+}) {
   const slots = FORMATIONS[formation] ?? [];
 
   return (
@@ -25,6 +29,7 @@ export default function FormationField({ formation, placedPlayers }) {
             label={slot.label}
             className={slot.className}
             player={placedPlayers[slot.id] ?? null}
+            onEmptySlotClick={onEmptySlotClick}
           />
         ))}
       </div>

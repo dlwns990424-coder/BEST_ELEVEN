@@ -87,6 +87,15 @@ export default function Home() {
       </section>
 
       {/* =========================
+          하단 버튼 영역 그라데이션
+      ========================= */}
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-0 ${
+          currentUser ? "home-action-gradient" : "home-action-gradient-guest"
+        }`}
+      />
+
+      {/* =========================
           팀 생성하기
       ========================= */}
       <button
@@ -95,6 +104,7 @@ export default function Home() {
         className={`
           ${currentUser ? "home-primary-action" : "home-primary-action-guest"}
           absolute
+          z-10
           flex h-[53px] items-center justify-center
           rounded-lg
           bg-[#B9E000]
@@ -125,6 +135,7 @@ export default function Home() {
           className="
             home-secondary-action
             absolute
+            z-10
             flex h-[53px] items-center justify-center
             rounded-lg
             border border-[#B9E000]

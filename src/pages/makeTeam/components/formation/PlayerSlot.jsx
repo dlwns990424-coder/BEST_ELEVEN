@@ -3,7 +3,14 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 
 import PlayerImage from "../../../../components/common/PlayerImage";
 
-export default function PlayerSlot({ slotId, type, label, className, player }) {
+export default function PlayerSlot({
+  slotId,
+  type,
+  label,
+  className,
+  player,
+  onEmptySlotClick,
+}) {
   const typeStyle = {
     fw: "border-[#C94E38] bg-[#C94E38]/70",
     mf: "border-[#24DB54] bg-[#24DB54]/70",
@@ -87,7 +94,8 @@ export default function PlayerSlot({ slotId, type, label, className, player }) {
         <button
           ref={setDroppableNodeRef}
           type="button"
-          aria-label={`${label} 선수 배치`}
+          onClick={() => onEmptySlotClick(slotId)}
+          aria-label={`${label} 선수 추가`}
           className={`
             absolute left-1/2 top-1/2
             flex h-9 w-9
